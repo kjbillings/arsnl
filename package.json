@@ -1,0 +1,27 @@
+{
+      "name": "arsnl",
+      "version": "1.0.0-0",
+      "main": "src/index.js",
+      "description": "Tools to build an single-page web-app in javascript",
+      "private": true,
+      "scripts": {
+            "build": "npx webpack --config webpack.config.js"
+      },
+      "author": "kjbillings",
+      "license": "ISC",
+      "devDependencies": {
+            "classname": "^0.0.0",
+            "lodash": "^4.17.15",
+            "path-to-regexp": "^6.1.0",
+            "querystring": "^0.2.0",
+            "webpack": "^4.41.4",
+            "webpack-cli": "^3.3.10",
+            "webpack-node-externals": "^1.7.2"
+      },
+      "peerDependencies": {
+            "classname": "^0.0.0",
+            "lodash": "^4.17.15",
+            "path-to-regexp": "^6.1.0",
+            "querystring": "^0.2.0"
+      }
+}
