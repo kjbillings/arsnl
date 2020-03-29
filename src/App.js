@@ -1,8 +1,4 @@
-import { set } from 'lodash'
-
 import { Router } from './Router'
-
-export const arsnl_namespace = '__ARSNL__'
 
 export const App = class App {
     constructor(config){

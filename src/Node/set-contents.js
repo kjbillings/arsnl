@@ -1,22 +1,14 @@
-import {
-    has,
-    get,
-    isString,
-    isNumber,
-    isArray,
-    isObject,
-} from 'lodash'
+import { get, isFunction, isString, isNumber, isArray, isObject } from 'lodash'
 
-import {
-    subscribe,
-    State,
-} from '../'
-import { arsnl_namespace } from '../App'
+import { subscribe, State } from '../State'
+import arsnl_namespace from '../namespace'
 import isElement from './is-element'
 import isState from './is-state'
 
-const renderElement = (el, contents) => {
-    el.append(contents)
+const append = (target, appendage) => {
+    if (isFunction(target.append)) {
+        target.append(appendage)
+    }
 }
 
 const renderArray = (el, contents) => {
@@ -36,12 +28,15 @@ const renderStateObject = (el, contents) => {
 
 const renderString = (el, contents) => {
     const child = document.createTextNode(contents)
-    el.append(child)
+    append(el, child)
 }
 
 const render = (el, contents) => {
+    if (contents instanceof SVGElement) {
+        return el.appendChild(contents)
+    }
     if (isElement(contents)) {
-        return renderElement(el, contents)
+        return append(el, contents)
     }
     if (isArray(contents)) {
         return renderArray(el, contents)

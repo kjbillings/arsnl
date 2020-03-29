@@ -1,14 +1,7 @@
-import {
-    get,
-    set,
-    keys,
-    isNumber,
-    isObject,
-    isFunction,
-} from 'lodash'
+import { isFunction } from 'lodash'
 
-import { subscribe } from '../State'
-import { arsnl_namespace } from '../App'
+import { subscribe } from './subscribe'
+import arsnl_namespace from '../namespace'
 
 export default (object, onChange) => {
     if (isFunction(onChange)) {

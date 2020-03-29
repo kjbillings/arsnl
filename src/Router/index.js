@@ -1,32 +1,26 @@
 import { match } from 'path-to-regexp'
-import {
-    get,
-    isFunction,
-    noop,
-    isNull,
-} from 'lodash'
+import { get, isNull } from 'lodash'
 
 import qs from './query-string'
-import { Node, State, subscribe } from '../'
+import { Node } from '../Node'
+import { State, subscribe } from '../State'
 import { generateId } from './generate-id'
-import EventManager from '../event-manager'
+import routerEvents from './router-events'
+import getRedirectHandler from './redirect'
 
 const EmptyRoute = () => ''
 
-const routerEvents = new EventManager()
+const PAGE_NOT_FOUND = '/404'
 
-export const navigate = (path) => {
-    if (path !== window.location.pathname) {
-        window.history.pushState('', '', `${window.location.origin}${path}`)
-        routerEvents.onChange()
-    }
-}
+export { Link } from './Link'
 
 export class Router {
-    constructor(routes){
+    constructor (routes) {
         this.routes = routes || {}
         this.className = `arsnl-router-${generateId()}`
-        this.route = State({ current: EmptyRoute })
+        this.route = State({
+            current: get(routes, PAGE_NOT_FOUND, EmptyRoute)
+        })
         this.handleListeners()
         this.setRoute()
     }
@@ -46,31 +40,49 @@ export class Router {
     isRendered () {
         return !isNull(document.querySelector(`.${this.className}`))
     }
+    findRoute (path) {
+        const output = {}
+        Object.keys(this.routes)
+            .forEach((current) => {
+                const matched = match(current, {
+                    decode: decodeURIComponent
+                })(path)
+                if (matched) {
+                    output.found = current
+                    output.params = matched.params
+                }
+            })
+        return output
+    }
     setRoute () {
         const path = window.location.pathname
         let route = EmptyRoute
-        const routeNames = Object.keys(this.routes).forEach((current) => {
-            const matched = match(current, { decode: decodeURIComponent })(path)
-            if (matched) {
-                this.route.current = this.routes[current]
-                this.route.currentParams = matched.params
-            }
-        })
+        const {
+            found,
+            params,
+        } = this.findRoute(path)
+        if (found) {
+            this.route.current = this.routes[found]
+            this.route.currentParams = params
+        } else {
+            this.route.current = get(this.routes, PAGE_NOT_FOUND, EmptyRoute)
+        }
     }
-    render() {
+    render () {
         return Node(() => {
             if (!this.is.listening) {
                 this.is.listening = true
             }
             return {
-                className: this.className,
+                c: this.className,
                 r: this.route.current({
                     params: this.route.currentParams,
                     search: qs.parse(window.location.search),
+                    redirect: getRedirectHandler(routerEvents),
                 }),
             }
-        }, [ this.route ])
+        }, [
+            this.route
+        ])
     }
 }
-
-export { Link } from './Link'

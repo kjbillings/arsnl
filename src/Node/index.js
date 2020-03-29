@@ -1,19 +1,13 @@
-import {
-    isObject,
-    isFunction,
-} from 'lodash'
+import { isObject, isFunction } from 'lodash'
 
-import {
-    subscribe,
-    arsnl_namespace,
-} from '../'
-
+import { subscribe } from '../State'
 import createElement from './create-element'
 import setContents from './set-contents'
 import setStyle from './set-style'
 import setRest from './set-rest'
+import waitForRender from '../wait-for-render'
 
-export const waitForRender = fn => setTimeout(fn, 10)
+export { default as isDomNode } from './is-dom-node'
 
 export const resolveConfig = (config) => (
     isFunction(config)

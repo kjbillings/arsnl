@@ -1,11 +1,8 @@
-import {
-    set,
-    isObject,
-} from 'lodash'
+import { isObject } from 'lodash'
 
-import { subscribe, } from '../State'
-import { waitForRender } from '../Node'
-import { arsnl_namespace } from '../App'
+import { subscribe } from '../State'
+import waitForRender from '../wait-for-render'
+import arsnl_namespace from '../namespace'
 import isState from './is-state'
 
 export default (el, config) => {

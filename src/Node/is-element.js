@@ -1,12 +1,16 @@
 import { isObject } from 'lodash'
+import isDomNode from './is-dom-node'
 
 export default obj => {
     try {
-        return obj instanceof HTMLElement
+        const isHtml = obj instanceof HTMLElement
+        const isComment = obj instanceof Comment
+        const isSvg = obj instanceof SVGElement
+        return isSvg || isHtml || isComment
     }
     catch(e){
         return isObject(obj)
-            && (obj.nodeType === 1)
+            && isDomNode(obj)
             && isObject(obj.style)
             && isObject(obj.ownerDocument)
     }

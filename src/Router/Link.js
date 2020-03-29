@@ -1,7 +1,7 @@
 import { isString } from 'lodash'
 
-import {  Node } from '../'
-import { navigate } from './'
+import {  Node } from '../Node'
+import { navigate } from './navigate'
 
 export const Link = ({ path, ...rest }) => (
     Node({
