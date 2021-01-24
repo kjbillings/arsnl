@@ -2,7 +2,7 @@ import { match } from 'path-to-regexp'
 import { get, isNull } from 'lodash'
 
 import qs from './query-string'
-import { Node } from '../Node'
+import { r } from '../Node'
 import { State, subscribe } from '../State'
 import { generateId } from './generate-id'
 import routerEvents from './router-events'
@@ -69,13 +69,13 @@ export class Router {
         }
     }
     render () {
-        return Node(() => {
+        return r(() => {
             if (!this.is.listening) {
                 this.is.listening = true
             }
             return {
-                c: this.className,
-                r: this.route.current({
+                class: this.className,
+                render: this.route.current({
                     params: this.route.currentParams,
                     search: qs.parse(window.location.search),
                     redirect: getRedirectHandler(routerEvents),

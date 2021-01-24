@@ -1,22 +1,20 @@
 {
-      "name": "@kjbillings/arsnl",
+      "name": "arsnl",
       "author": "kjbillings",
-      "version": "1.0.0-0",
-      "main": "dist/bundle.js",
+      "version": "1.0.0",
+      "main": "dist/index.js",
       "description": "Tools to build an single-page web-app in javascript",
       "scripts": {
-            "build": "rollup --watch --config rollup.config.js"
+            "build": "rollup --config rollup.config.js"
       },
       "license": "ISC",
       "devDependencies": {
-            "lodash": "^4.17.15",
-            "path-to-regexp": "^6.1.0",
-            "querystring": "^0.2.0",
+            "@rollup/plugin-node-resolve": "^7.1.1",
             "rollup": "^2.0.6",
             "rollup-plugin-commonjs": "^10.1.0",
-            "rollup-plugin-node-resolve": "^5.2.0"
+            "rollup-plugin-node-builtins": "^2.1.2"
       },
-      "peerDependencies": {
+      "dependencies": {
             "lodash": "^4.17.15",
             "path-to-regexp": "^6.1.0",
             "querystring": "^0.2.0"

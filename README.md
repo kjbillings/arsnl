@@ -43,7 +43,7 @@ Example `index.html`:
 
 Example `index.js`:
 ```javascript
-import { App } from '@kjbillings/arsnl'
+import { App } from 'arsnl'
 import AppComponent from './AppComponent'
 import AppRoutes from './routes'
 
@@ -69,7 +69,7 @@ export default routes
 
 Example `AppComponent.js`:
 ```javascript
-import { Node } from '@kjbillings/arsnl'
+import { Node } from 'arsnl'
 
 export default (app) => (
     Node({
@@ -114,14 +114,14 @@ Config Object also will take any [properties supported by standard JS DOM Nodes]
 
 Here's a minimal example of a component:
 ```javascript
-import { Node } from '@kjbillings/arsnl'
+import { Node } from 'arsnl'
 
 export default () => Node({ r: "Hello world!" })
 ```
 
 Here's a complex example of a component:
 ```javascript
-import { Node, State } from '@kjbillings/arsnl'
+import { Node, State } from 'arsnl'
 
 export default () => {
     const background = State({ value: 'none' })
@@ -174,7 +174,7 @@ This function allows you to enhance an object with proxy so subscribers can list
 
 An example of user being able to update state:
 ```javascript
-import { Node, State } from '@kjbillings/arsnl'
+import { Node, State } from 'arsnl'
 
 export default () => {
     const counter = State({ value: 0 })    
@@ -214,7 +214,7 @@ This function adds an onChange listener to a given State object.
 #### Usage:
 
 ```javascript
-import { Node, State, subscribe } from '@kjbillings/arsnl'
+import { Node, State, subscribe } from 'arsnl'
 
 export default () => {
     const counter = State({ value: 0 })  
@@ -247,7 +247,7 @@ This example is a button that auto-saves a counter State on every change using s
 #### Usage:
 
 ```javascript
-import { Node, State, extract } from '@kjbillings/arsnl'
+import { Node, State, extract } from 'arsnl'
 import { autoSaveCounterState } from 'some-api-helper'
 
 export default () => {
@@ -283,7 +283,7 @@ THIS ONLY LISTENS to location changes made using the ARSNL Link component - see 
 #### Usage:
 
 ```javascript
-import { Node, Router } from '@kjbillings/arsnl'
+import { Node, Router } from 'arsnl'
 
 import Home from './routes/Home'
 import Work from './routes/Work'
@@ -330,7 +330,7 @@ This function builds a link component that ties into the navigation provided by 
 #### Usage:
 
 ```javascript
-import { Node, Router } from '@kjbillings/arsnl'
+import { Node, Router } from 'arsnl'
 
 export default () => (
     Link({

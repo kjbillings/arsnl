@@ -6,7 +6,7 @@ import arsnl_namespace from '../namespace'
 import isState from './is-state'
 
 export default (el, config) => {
-    const style = config.s
+    const style = config.style
 
     const setProperty = (key, value) => {
         waitForRender(() => {

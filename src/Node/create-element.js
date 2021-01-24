@@ -6,16 +6,19 @@ import {
 export const xmlns = "http://www.w3.org/2000/svg"
 
 export default config => {
+    let tag = config.tag
+
     if (!isObject(config)) {
         return document.createDocumentFragment()
     }
-    if (isString(config.t)) {
-        if (config.t === 'comment') {
-            return document.createComment(config.r || '')
+    if (isString(tag)) {
+        tag = tag.toLowerCase()
+        if (tag === 'comment') {
+            return document.createComment(config.render || '')
         }
-        if (config.t.includes('svg')) {
-            return document.createElementNS(xmlns, config.t.replace('svg:', ''))
+        if (tag.includes('svg')) {
+            return document.createElementNS(xmlns, tag.replace('svg:', ''))
         }
     }
-    return document.createElement(config.t || 'div')
+    return document.createElement(tag || 'div')
 }

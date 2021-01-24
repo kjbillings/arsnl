@@ -8,6 +8,8 @@ import setRest from './set-rest'
 import waitForRender from '../wait-for-render'
 
 export { default as isDomNode } from './is-dom-node'
+export { default as isConfig } from './is-config'
+export { default as waitForRender } from '../wait-for-render'
 
 export const resolveConfig = (config) => (
     isFunction(config)
@@ -45,7 +47,7 @@ const watchStates = (el, config, states) => {
     })
 }
 
-export const Node = (config={}, states=[]) => {
+export const r = (config={}, states=[]) => {
     const el = getNode(config)
     handleOnLoad(el, config)
     watchStates(el, config, states)

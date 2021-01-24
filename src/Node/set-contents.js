@@ -50,7 +50,7 @@ const render = (el, contents) => {
 }
 
 const setContents = (el, config) => {
-    const contents = config.r || config.innerHTML || config.contents || ''
+    const contents = config.render || config.innerHTML || ''
     el.innerHTML = ''
     render(el, contents)
 }
