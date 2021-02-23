@@ -1,5 +1,5 @@
 import { match } from 'path-to-regexp'
-import { get, isNull } from 'lodash'
+import { get, isNull, reject, isEmpty } from 'lodash'
 
 import qs from './query-string'
 import { r } from '../Node'
@@ -82,7 +82,8 @@ export class Router {
         getApp().afterRender()
     }
     setTitle (str) {
-        document.title = [getApp().title, str].join(' | ')
+        const title = reject([getApp().title, str], isEmpty).join(' | ')
+        document.title = title
     }
     render () {
         waitForRender(() => this.afterRender())

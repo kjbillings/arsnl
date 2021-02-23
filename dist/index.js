@@ -17436,18 +17436,20 @@ var lodash = createCommonjsModule(function (module, exports) {
 var lodash_1 = lodash.forEach;
 var lodash_2 = lodash.get;
 var lodash_3 = lodash.set;
-var lodash_4 = lodash.includes;
-var lodash_5 = lodash.isArray;
-var lodash_6 = lodash.isFunction;
-var lodash_7 = lodash.isNull;
-var lodash_8 = lodash.isNumber;
-var lodash_9 = lodash.isEqual;
-var lodash_10 = lodash.isObject;
-var lodash_11 = lodash.isString;
-var lodash_12 = lodash.isUndefined;
-var lodash_13 = lodash.omit;
-var lodash_14 = lodash.omitBy;
-var lodash_15 = lodash.remove;
+var lodash_4 = lodash.isArray;
+var lodash_5 = lodash.includes;
+var lodash_6 = lodash.isEmpty;
+var lodash_7 = lodash.isEqual;
+var lodash_8 = lodash.isFunction;
+var lodash_9 = lodash.isNull;
+var lodash_10 = lodash.isNumber;
+var lodash_11 = lodash.isObject;
+var lodash_12 = lodash.isString;
+var lodash_13 = lodash.isUndefined;
+var lodash_14 = lodash.omit;
+var lodash_15 = lodash.omitBy;
+var lodash_16 = lodash.reject;
+var lodash_17 = lodash.remove;
 
 // Copyright Joyent, Inc. and other Node contributors.
 
@@ -17569,7 +17571,7 @@ var qs = {
         return querystring.parse(search)
     },
     stringify: obj => {
-        return querystring.stringify(lodash_14(obj, lodash_12))
+        return querystring.stringify(lodash_15(obj, lodash_13))
     }
 };
 
@@ -17585,7 +17587,7 @@ class EventManager {
         this.listeners.push(fn);
     }
     removeListener (fn) {
-        lodash_15(this.listeners, (listener) => listener === fn);
+        lodash_17(this.listeners, (listener) => listener === fn);
     }
     onChange (key, value) {
         this.listeners.forEach(fn => {
@@ -17599,7 +17601,7 @@ const subscribe = (state, fn) => (
 );
 
 var createProxy = (object, onChange) => {
-    if (lodash_6(onChange)) {
+    if (lodash_8(onChange)) {
         subscribe(object, onChange);
     }
     return (
@@ -17616,7 +17618,7 @@ var createProxy = (object, onChange) => {
 };
 
 const extract = (state) => (
-    lodash_13(state, [namespace])
+    lodash_14(state, [namespace])
 );
 
 const State = (object={}, onChange) => {
@@ -17629,10 +17631,10 @@ const xmlns = "http://www.w3.org/2000/svg";
 var createElement = config => {
     let tag = config.tag;
 
-    if (!lodash_10(config)) {
+    if (!lodash_11(config)) {
         return document.createDocumentFragment()
     }
-    if (lodash_11(tag)) {
+    if (lodash_12(tag)) {
         tag = tag.toLowerCase();
         if (tag === 'comment') {
             return document.createComment(config.render || '')
@@ -17654,17 +17656,17 @@ var isElement = obj => {
         return isSvg || isHtml || isComment
     }
     catch(e){
-        return lodash_10(obj)
+        return lodash_11(obj)
             && isDomNode(obj)
-            && lodash_10(obj.style)
-            && lodash_10(obj.ownerDocument)
+            && lodash_11(obj.style)
+            && lodash_11(obj.ownerDocument)
     }
 };
 
-var isState = (obj={}) => lodash_10(obj[namespace]);
+var isState = (obj={}) => lodash_11(obj[namespace]);
 
 const append = (target, appendage) => {
-    if (lodash_6(target.append)) {
+    if (lodash_8(target.append)) {
         target.append(appendage);
     }
 };
@@ -17696,13 +17698,13 @@ const render = (el, contents) => {
     if (isElement(contents)) {
         return append(el, contents)
     }
-    if (lodash_5(contents)) {
+    if (lodash_4(contents)) {
         return renderArray(el, contents)
     }
-    if (lodash_10(contents) && isState(contents)){
+    if (lodash_11(contents) && isState(contents)){
         return renderStateObject(el, contents)
     }
-    if (lodash_8(contents) || lodash_11(contents)) {
+    if (lodash_10(contents) || lodash_12(contents)) {
         return renderString(el, contents)
     }
 };
@@ -17726,7 +17728,7 @@ var setStyle = (el, config) => {
         });
     };
 
-    if (lodash_10(style)) {
+    if (lodash_11(style)) {
         if (isState(style)) {
             subscribe(style, (key, value) => {
                 setProperty(key, value);
@@ -17747,14 +17749,14 @@ const SHORTHANDS = [
 ];
 
 const isSameFn = (a, b) => (
-    lodash_6(a)
-    && lodash_6(b)
+    lodash_8(a)
+    && lodash_8(b)
     && a.toString() === b.toString()
 );
 
 var setRest = (el, config) => {
     lodash_1(config, (value, key) => {
-        if (!lodash_4(SHORTHANDS, key)) {
+        if (!lodash_5(SHORTHANDS, key)) {
             const lcKey = key.toLowerCase();
             if (isSameFn(el[key], value) || isSameFn(el[lcKey], value)) {
                 return
@@ -17774,20 +17776,20 @@ var setRest = (el, config) => {
 
 const isConfig = args => (
     (
-        !lodash_12(args)
-        && !lodash_7(args)
-        && !lodash_11(args)
-        && lodash_10(args)
-        && !lodash_5(args)
+        !lodash_13(args)
+        && !lodash_9(args)
+        && !lodash_12(args)
+        && lodash_11(args)
+        && !lodash_4(args)
         && !isDomNode(args)
     ) || (
-        lodash_6(args)
+        lodash_8(args)
         && isConfig(args())
     )
 );
 
 const resolveConfig = (config) => (
-    lodash_6(config)
+    lodash_8(config)
         ? config()
         : config
 );
@@ -17807,7 +17809,7 @@ const getNode = (config) => {
 
 const handleOnLoad = (el, config) => {
     const resolvedConfig = resolveConfig(config);
-    if (lodash_6(resolvedConfig.onLoad)) {
+    if (lodash_8(resolvedConfig.onLoad)) {
         waitForRender(() => {
             resolvedConfig.onLoad(el);
         });
@@ -17853,7 +17855,7 @@ const Link = ({ path, tag='a', ...rest }) => (
         tag,
         href: path || rest.href,
         onclick: e => {
-            if (lodash_11(path)) {
+            if (lodash_12(path)) {
                 e.preventDefault();
                 navigate(path);
             }
@@ -17895,7 +17897,7 @@ class Router {
         });
     }
     isRendered () {
-        return !lodash_7(document.querySelector(`.${this.className}`))
+        return !lodash_9(document.querySelector(`.${this.className}`))
     }
     findRoute (path) {
         const output = {};
@@ -17928,7 +17930,8 @@ class Router {
         getApp().afterRender();
     }
     setTitle (str) {
-        document.title = [getApp().title, str].join(' | ');
+        const title = lodash_16([getApp().title, str], lodash_6).join(' | ');
+        document.title = title;
     }
     render () {
         waitForRender(() => this.afterRender());
