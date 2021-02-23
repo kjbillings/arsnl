@@ -15,12 +15,15 @@ export default {
         commonjs({
             namedExports: {
                 'node_modules/lodash/lodash.js': [
+                    'forEach',
                     'get',
+                    'set',
                     'includes',
                     'isArray',
                     'isFunction',
                     'isNull',
                     'isNumber',
+                    'isEqual',
                     'isObject',
                     'isString',
                     'isUndefined',

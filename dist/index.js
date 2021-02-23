@@ -17433,18 +17433,21 @@ var lodash = createCommonjsModule(function (module, exports) {
   }
 }.call(commonjsGlobal));
 });
-var lodash_1 = lodash.get;
-var lodash_2 = lodash.includes;
-var lodash_3 = lodash.isArray;
-var lodash_4 = lodash.isFunction;
-var lodash_5 = lodash.isNull;
-var lodash_6 = lodash.isNumber;
-var lodash_7 = lodash.isObject;
-var lodash_8 = lodash.isString;
-var lodash_9 = lodash.isUndefined;
-var lodash_10 = lodash.omit;
-var lodash_11 = lodash.omitBy;
-var lodash_12 = lodash.remove;
+var lodash_1 = lodash.forEach;
+var lodash_2 = lodash.get;
+var lodash_3 = lodash.set;
+var lodash_4 = lodash.includes;
+var lodash_5 = lodash.isArray;
+var lodash_6 = lodash.isFunction;
+var lodash_7 = lodash.isNull;
+var lodash_8 = lodash.isNumber;
+var lodash_9 = lodash.isEqual;
+var lodash_10 = lodash.isObject;
+var lodash_11 = lodash.isString;
+var lodash_12 = lodash.isUndefined;
+var lodash_13 = lodash.omit;
+var lodash_14 = lodash.omitBy;
+var lodash_15 = lodash.remove;
 
 // Copyright Joyent, Inc. and other Node contributors.
 
@@ -17566,9 +17569,13 @@ var qs = {
         return querystring.parse(search)
     },
     stringify: obj => {
-        return querystring.stringify(lodash_11(obj, lodash_9))
+        return querystring.stringify(lodash_14(obj, lodash_12))
     }
 };
+
+const namespace = '__ARSNL__';
+
+const getApp = () => lodash_2(window, namespace);
 
 class EventManager {
     constructor () {
@@ -17578,7 +17585,7 @@ class EventManager {
         this.listeners.push(fn);
     }
     removeListener (fn) {
-        lodash_12(this.listeners, (listener) => listener === fn);
+        lodash_15(this.listeners, (listener) => listener === fn);
     }
     onChange (key, value) {
         this.listeners.forEach(fn => {
@@ -17587,14 +17594,12 @@ class EventManager {
     }
 }
 
-var namespace = '__ARSNL__';
-
 const subscribe = (state, fn) => (
     state[namespace].addListener(fn)
 );
 
 var createProxy = (object, onChange) => {
-    if (lodash_4(onChange)) {
+    if (lodash_6(onChange)) {
         subscribe(object, onChange);
     }
     return (
@@ -17611,7 +17616,7 @@ var createProxy = (object, onChange) => {
 };
 
 const extract = (state) => (
-    lodash_10(state, [namespace])
+    lodash_13(state, [namespace])
 );
 
 const State = (object={}, onChange) => {
@@ -17624,10 +17629,10 @@ const xmlns = "http://www.w3.org/2000/svg";
 var createElement = config => {
     let tag = config.tag;
 
-    if (!lodash_7(config)) {
+    if (!lodash_10(config)) {
         return document.createDocumentFragment()
     }
-    if (lodash_8(tag)) {
+    if (lodash_11(tag)) {
         tag = tag.toLowerCase();
         if (tag === 'comment') {
             return document.createComment(config.render || '')
@@ -17649,17 +17654,17 @@ var isElement = obj => {
         return isSvg || isHtml || isComment
     }
     catch(e){
-        return lodash_7(obj)
+        return lodash_10(obj)
             && isDomNode(obj)
-            && lodash_7(obj.style)
-            && lodash_7(obj.ownerDocument)
+            && lodash_10(obj.style)
+            && lodash_10(obj.ownerDocument)
     }
 };
 
-var isState = (obj={}) => lodash_7(obj[namespace]);
+var isState = (obj={}) => lodash_10(obj[namespace]);
 
 const append = (target, appendage) => {
-    if (lodash_4(target.append)) {
+    if (lodash_6(target.append)) {
         target.append(appendage);
     }
 };
@@ -17672,7 +17677,7 @@ const renderArray = (el, contents) => {
 
 const renderStateObject = (el, contents) => {
     const firstProperty = Object.keys(contents)[0];
-    let child = document.createTextNode(lodash_1(contents, firstProperty, ''));
+    let child = document.createTextNode(lodash_2(contents, firstProperty, ''));
     subscribe(contents, (key, value) => {
         child.replaceData(0, child.length, value);
     });
@@ -17691,13 +17696,13 @@ const render = (el, contents) => {
     if (isElement(contents)) {
         return append(el, contents)
     }
-    if (lodash_3(contents)) {
+    if (lodash_5(contents)) {
         return renderArray(el, contents)
     }
-    if (lodash_7(contents) && isState(contents)){
+    if (lodash_10(contents) && isState(contents)){
         return renderStateObject(el, contents)
     }
-    if (lodash_6(contents) || lodash_8(contents)) {
+    if (lodash_8(contents) || lodash_11(contents)) {
         return renderString(el, contents)
     }
 };
@@ -17708,7 +17713,7 @@ const setContents = (el, config) => {
     render(el, contents);
 };
 
-var waitForRender = fn => setTimeout(fn, 10);
+var waitForRender = (fn, w=10) => setTimeout(fn, w);
 
 var setStyle = (el, config) => {
     const style = config.style;
@@ -17721,7 +17726,7 @@ var setStyle = (el, config) => {
         });
     };
 
-    if (lodash_7(style)) {
+    if (lodash_10(style)) {
         if (isState(style)) {
             subscribe(style, (key, value) => {
                 setProperty(key, value);
@@ -17741,47 +17746,48 @@ const SHORTHANDS = [
     'onLoad',
 ];
 
+const isSameFn = (a, b) => (
+    lodash_6(a)
+    && lodash_6(b)
+    && a.toString() === b.toString()
+);
+
 var setRest = (el, config) => {
-    Object.keys(config).forEach((key) => {
-        const lowerCaseKey = key.toLowerCase();
-        if (!lodash_2(SHORTHANDS, key)) {
-            if (key === 'innerHTML') {
-                el.innerHTML = config[key];
+    lodash_1(config, (value, key) => {
+        if (!lodash_4(SHORTHANDS, key)) {
+            const lcKey = key.toLowerCase();
+            if (isSameFn(el[key], value) || isSameFn(el[lcKey], value)) {
                 return
             }
-            if (key === 'disabled') {
-                el.disabled = config[key];
-                return
-            }
-            if (el[lowerCaseKey] === null) {
-                el[lowerCaseKey] = config[key];
+            if (el[lcKey] === null) {
+                el[lcKey] = value;
                 return
             }
             if (el[key] === null) {
-                el[key] = config[key];
+                el[key] = value;
                 return
             }
-            el.setAttribute(key, config[key]);
+            el.setAttribute(key, value);
         }
     });
 };
 
 const isConfig = args => (
     (
-        !lodash_9(args)
+        !lodash_12(args)
+        && !lodash_7(args)
+        && !lodash_11(args)
+        && lodash_10(args)
         && !lodash_5(args)
-        && !lodash_8(args)
-        && lodash_7(args)
-        && !lodash_3(args)
         && !isDomNode(args)
     ) || (
-        lodash_4(args)
+        lodash_6(args)
         && isConfig(args())
     )
 );
 
 const resolveConfig = (config) => (
-    lodash_4(config)
+    lodash_6(config)
         ? config()
         : config
 );
@@ -17801,7 +17807,7 @@ const getNode = (config) => {
 
 const handleOnLoad = (el, config) => {
     const resolvedConfig = resolveConfig(config);
-    if (lodash_4(resolvedConfig.onLoad)) {
+    if (lodash_6(resolvedConfig.onLoad)) {
         waitForRender(() => {
             resolvedConfig.onLoad(el);
         });
@@ -17812,6 +17818,7 @@ const watchStates = (el, config, states) => {
     states.forEach((state) => {
         subscribe(state, () => {
             el = render$1(el, resolveConfig(config));
+            getApp().afterRender();
         });
     });
 };
@@ -17828,11 +17835,8 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 var routerEvents = new EventManager();
 
 const navigate = (path, routerEvents$1=routerEvents) => {
-    if (path !== window.location.pathname) {
-        window.history.pushState('', '', `${window.location.origin}${path}`);
-        console.log('made it', routerEvents$1, path);
-        routerEvents$1.onChange();
-    }
+    window.history.pushState({path}, document.title, `${window.location.origin}${path}`);
+    routerEvents$1.onChange();
 };
 
 var getRedirectHandler = routerEvents => (
@@ -17843,13 +17847,13 @@ var getRedirectHandler = routerEvents => (
     )
 );
 
-const Link = ({ path, ...rest }) => (
+const Link = ({ path, tag='a', ...rest }) => (
     r({
         ...rest,
-        tag: 'a',
+        tag,
         href: path || rest.href,
         onclick: e => {
-            if (lodash_8(path)) {
+            if (lodash_11(path)) {
                 e.preventDefault();
                 navigate(path);
             }
@@ -17866,10 +17870,16 @@ class Router {
         this.routes = routes || {};
         this.className = `arsnl-router-${generateId()}`;
         this.route = State({
-            current: lodash_1(routes, PAGE_NOT_FOUND, EmptyRoute)
+            current: lodash_2(routes, PAGE_NOT_FOUND, EmptyRoute)
         });
         this.handleListeners();
         this.setRoute();
+        this.subscribeToStateChanges();
+    }
+    subscribeToStateChanges () {
+        window.addEventListener("popstate", () => {
+            window.location.pathname = window.location.pathname;
+        });
     }
     handleListeners () {
         this.is = State({ listening: false });
@@ -17885,7 +17895,7 @@ class Router {
         });
     }
     isRendered () {
-        return !lodash_5(document.querySelector(`.${this.className}`))
+        return !lodash_7(document.querySelector(`.${this.className}`))
     }
     findRoute (path) {
         const output = {};
@@ -17911,10 +17921,17 @@ class Router {
             this.route.current = this.routes[found];
             this.route.currentParams = params;
         } else {
-            this.route.current = lodash_1(this.routes, PAGE_NOT_FOUND, EmptyRoute);
+            this.route.current = lodash_2(this.routes, PAGE_NOT_FOUND, EmptyRoute);
         }
     }
+    afterRender () {
+        getApp().afterRender();
+    }
+    setTitle (str) {
+        document.title = [getApp().title, str].join(' | ');
+    }
     render () {
+        waitForRender(() => this.afterRender());
         return r(() => {
             if (!this.is.listening) {
                 this.is.listening = true;
@@ -17922,6 +17939,7 @@ class Router {
             return {
                 class: this.className,
                 render: this.route.current({
+                    setTitle: str => this.setTitle(str),
                     params: this.route.currentParams,
                     search: qs.parse(window.location.search),
                     redirect: getRedirectHandler(routerEvents),
@@ -17935,14 +17953,15 @@ class Router {
 
 const App = class App {
     constructor(config){
+        this.title = config.title || '';
         this.id = config.id;
+        this.onAfterRender = config.onAfterRender;
         this.component = config.component;
         this.router = new Router(config.routes);
-        this.theme = config.theme;
-        this.setGlobals();
+        this.globalize();
         this.renderApp();
     }
-    setGlobals () {
+    globalize () {
         window[namespace] = this;
     }
     getRootElement() {
@@ -17953,7 +17972,18 @@ const App = class App {
             .append(this.component(this));
     }
     renderRoutes () {
+        this.beforeRender();
         return this.router.render()
+    }
+    afterRender () {
+        if (this.onAfterRender) {
+            this.onAfterRender();
+        }
+    }
+    beforeRender () {
+        if (this.onBeforeRender) {
+            this.onBeforeRender();
+        }
     }
 };
 
@@ -17965,6 +17995,7 @@ exports.extract = extract;
 exports.isConfig = isConfig;
 exports.isDomNode = isDomNode;
 exports.namespace = namespace;
+exports.navigate = navigate;
 exports.r = r;
 exports.resolveConfig = resolveConfig;
 exports.subscribe = subscribe;

@@ -3,16 +3,20 @@ import { get, isNull } from 'lodash'
 
 import qs from './query-string'
 import { r } from '../Node'
+import waitForRender from '../wait-for-render'
+import { getApp } from '../App/getters'
 import { State, subscribe } from '../State'
 import { generateId } from './generate-id'
 import routerEvents from './router-events'
 import getRedirectHandler from './redirect'
+import { navigate } from './navigate'
 
 const EmptyRoute = () => ''
 
 const PAGE_NOT_FOUND = '/404'
 
 export { Link } from './Link'
+export { navigate } from './navigate'
 
 export class Router {
     constructor (routes) {
@@ -23,6 +27,12 @@ export class Router {
         })
         this.handleListeners()
         this.setRoute()
+        this.subscribeToStateChanges()
+    }
+    subscribeToStateChanges () {
+        window.addEventListener("popstate", () => {
+            window.location.pathname = window.location.pathname
+        })
     }
     handleListeners () {
         this.is = State({ listening: false })
@@ -68,7 +78,14 @@ export class Router {
             this.route.current = get(this.routes, PAGE_NOT_FOUND, EmptyRoute)
         }
     }
+    afterRender () {
+        getApp().afterRender()
+    }
+    setTitle (str) {
+        document.title = [getApp().title, str].join(' | ')
+    }
     render () {
+        waitForRender(() => this.afterRender())
         return r(() => {
             if (!this.is.listening) {
                 this.is.listening = true
@@ -76,6 +93,7 @@ export class Router {
             return {
                 class: this.className,
                 render: this.route.current({
+                    setTitle: str => this.setTitle(str),
                     params: this.route.currentParams,
                     search: qs.parse(window.location.search),
                     redirect: getRedirectHandler(routerEvents),

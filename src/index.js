@@ -1,5 +1,5 @@
 export { App } from './App'
 export { r, isDomNode, isConfig, resolveConfig, waitForRender } from './Node'
 export { State, subscribe, extract } from './State'
-export { Router, Link } from './Router'
+export { Router, Link, navigate } from './Router'
 export { default as namespace } from './namespace'

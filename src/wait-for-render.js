@@ -1,1 +1,1 @@
-export default fn => setTimeout(fn, 10)
+export default (fn, w=10) => setTimeout(fn, w)
