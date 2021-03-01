@@ -50,9 +50,13 @@ const render = (el, contents) => {
 }
 
 const setContents = (el, config) => {
-    const contents = config.render || config.innerHTML || ''
-    el.innerHTML = ''
-    render(el, contents)
+    if (config.dangerouslySetInnerHtml) {
+        el.innerHTML = config.dangerouslySetInnerHtml
+    } else {
+        const contents = config.render || ''
+        el.innerHTML = ''
+        render(el, contents)
+    }
 }
 
 export default setContents
