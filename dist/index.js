@@ -17744,12 +17744,15 @@ var setStyle = (el, config) => {
     }
 };
 
-const SHORTHANDS = [
+const INTERNAL_ATTRIBUTES = [
     namespace,
     'style',
     'tag',
     'render',
     'onLoad',
+    'dangerouslysetinnerhtml',
+    'dangerouslySetInnerHtml',
+    'dangerouslySetInnerHTML',
 ];
 
 const isSameFn = (a, b) => (
@@ -17760,7 +17763,7 @@ const isSameFn = (a, b) => (
 
 var setRest = (el, config) => {
     lodash_1(config, (value, key) => {
-        if (!lodash_5(SHORTHANDS, key)) {
+        if (!lodash_5(INTERNAL_ATTRIBUTES, key)) {
             const lcKey = key.toLowerCase();
             if (isSameFn(el[key], value) || isSameFn(el[lcKey], value)) {
                 return
