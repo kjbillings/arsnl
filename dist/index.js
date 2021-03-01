@@ -17711,7 +17711,6 @@ const render = (el, contents) => {
 
 const setContents = (el, config) => {
     if (config.dangerouslySetInnerHtml) {
-        debugger;
         el.innerHTML = config.dangerouslySetInnerHtml;
     } else {
         const contents = config.render || '';
