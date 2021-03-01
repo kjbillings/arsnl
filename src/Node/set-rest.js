@@ -2,12 +2,15 @@ import { forEach, includes, isFunction, isNull } from 'lodash'
 import arsnl_namespace from '../namespace'
 import { xmlns } from './create-element'
 
-const SHORTHANDS = [
+const INTERNAL_ATTRIBUTES = [
     arsnl_namespace,
     'style',
     'tag',
     'render',
     'onLoad',
+    'dangerouslysetinnerhtml',
+    'dangerouslySetInnerHtml',
+    'dangerouslySetInnerHTML',
 ]
 
 const isSameType = (a, b) => typeof a === typeof b
@@ -20,7 +23,7 @@ const isSameFn = (a, b) => (
 
 export default (el, config) => {
     forEach(config, (value, key) => {
-        if (!includes(SHORTHANDS, key)) {
+        if (!includes(INTERNAL_ATTRIBUTES, key)) {
             const lcKey = key.toLowerCase()
             if (isSameFn(el[key], value) || isSameFn(el[lcKey], value)) {
                 return
