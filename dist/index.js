@@ -17879,7 +17879,10 @@ class Router {
         this.routes = routes || {};
         this.className = `arsnl-router-${generateId()}`;
         this.route = State({
-            current: lodash_2(routes, PAGE_NOT_FOUND, EmptyRoute)
+            current: {
+                params: {},
+                component: this.get404(),
+            },
         });
         this.handleListeners();
         this.setRoute();
@@ -17920,6 +17923,9 @@ class Router {
             });
         return output
     }
+    get404 () {
+        return lodash_2(this.routes, PAGE_NOT_FOUND, EmptyRoute)
+    }
     setRoute () {
         const path = window.location.pathname;
         const {
@@ -17927,10 +17933,12 @@ class Router {
             params,
         } = this.findRoute(path);
         if (found) {
-            this.route.current = this.routes[found];
-            this.route.currentParams = params;
+            this.route.current = {
+                params,
+                component: this.routes[found],
+            };
         } else {
-            this.route.current = lodash_2(this.routes, PAGE_NOT_FOUND, EmptyRoute);
+            this.route.current = this.get404();
         }
     }
     afterRender () {
@@ -17948,16 +17956,14 @@ class Router {
             }
             return {
                 class: this.className,
-                render: this.route.current({
+                render: this.route.current.component({
                     setTitle: str => this.setTitle(str),
-                    params: this.route.currentParams,
+                    params: this.route.current.params,
                     search: qs.parse(window.location.search),
                     redirect: getRedirectHandler(routerEvents),
                 }),
             }
-        }, [
-            this.route
-        ])
+        }, [ this.route ])
     }
 }
 
