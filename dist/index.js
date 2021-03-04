@@ -17710,8 +17710,8 @@ const render = (el, contents) => {
 };
 
 const setContents = (el, config) => {
-    if (config.dangerouslySetInnerHtml) {
-        el.innerHTML = config.dangerouslySetInnerHtml;
+    if (config.dangerouslySetInnerHtml || config.dangerouslySetInnerHTML) {
+        el.innerHTML = config.dangerouslySetInnerHtml || config.dangerouslySetInnerHTML;
     } else {
         const contents = config.render || '';
         el.innerHTML = '';
