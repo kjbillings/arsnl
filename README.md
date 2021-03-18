@@ -1,7 +1,7 @@
 App Router & Stateful Node Library (ARSNL)
 ======
-#### Tools to build a single-page web-app in javascript
-A template-free framework library
+#### Tools to build a single-page web-app
+A template-free javascript app framework
 
 - App
 - Node

@@ -2,338 +2,31 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-/**
- * Tokenize input string.
- */
-function lexer(str) {
-    var tokens = [];
-    var i = 0;
-    while (i < str.length) {
-        var char = str[i];
-        if (char === "*" || char === "+" || char === "?") {
-            tokens.push({ type: "MODIFIER", index: i, value: str[i++] });
-            continue;
-        }
-        if (char === "\\") {
-            tokens.push({ type: "ESCAPED_CHAR", index: i++, value: str[i++] });
-            continue;
-        }
-        if (char === "{") {
-            tokens.push({ type: "OPEN", index: i, value: str[i++] });
-            continue;
-        }
-        if (char === "}") {
-            tokens.push({ type: "CLOSE", index: i, value: str[i++] });
-            continue;
-        }
-        if (char === ":") {
-            var name = "";
-            var j = i + 1;
-            while (j < str.length) {
-                var code = str.charCodeAt(j);
-                if (
-                // `0-9`
-                (code >= 48 && code <= 57) ||
-                    // `A-Z`
-                    (code >= 65 && code <= 90) ||
-                    // `a-z`
-                    (code >= 97 && code <= 122) ||
-                    // `_`
-                    code === 95) {
-                    name += str[j++];
-                    continue;
-                }
-                break;
-            }
-            if (!name)
-                throw new TypeError("Missing parameter name at " + i);
-            tokens.push({ type: "NAME", index: i, value: name });
-            i = j;
-            continue;
-        }
-        if (char === "(") {
-            var count = 1;
-            var pattern = "";
-            var j = i + 1;
-            if (str[j] === "?") {
-                throw new TypeError("Pattern cannot start with \"?\" at " + j);
-            }
-            while (j < str.length) {
-                if (str[j] === "\\") {
-                    pattern += str[j++] + str[j++];
-                    continue;
-                }
-                if (str[j] === ")") {
-                    count--;
-                    if (count === 0) {
-                        j++;
-                        break;
-                    }
-                }
-                else if (str[j] === "(") {
-                    count++;
-                    if (str[j + 1] !== "?") {
-                        throw new TypeError("Capturing groups are not allowed at " + j);
-                    }
-                }
-                pattern += str[j++];
-            }
-            if (count)
-                throw new TypeError("Unbalanced pattern at " + i);
-            if (!pattern)
-                throw new TypeError("Missing pattern at " + i);
-            tokens.push({ type: "PATTERN", index: i, value: pattern });
-            i = j;
-            continue;
-        }
-        tokens.push({ type: "CHAR", index: i, value: str[i++] });
+const namespace = '__ARSNL__';
+
+const App = class App {
+    constructor(config){
+        this.title = config.title || '';
+        this.id = config.id;
+        this.component = config.component;
+        this.router = config.router || console.error('ARSNL Error: router not found!');
+        this.globalize();
+        this.renderApp();
     }
-    tokens.push({ type: "END", index: i, value: "" });
-    return tokens;
-}
-/**
- * Parse a string for the raw tokens.
- */
-function parse(str, options) {
-    if (options === void 0) { options = {}; }
-    var tokens = lexer(str);
-    var _a = options.prefixes, prefixes = _a === void 0 ? "./" : _a;
-    var defaultPattern = "[^" + escapeString(options.delimiter || "/#?") + "]+?";
-    var result = [];
-    var key = 0;
-    var i = 0;
-    var path = "";
-    var tryConsume = function (type) {
-        if (i < tokens.length && tokens[i].type === type)
-            return tokens[i++].value;
-    };
-    var mustConsume = function (type) {
-        var value = tryConsume(type);
-        if (value !== undefined)
-            return value;
-        var _a = tokens[i], nextType = _a.type, index = _a.index;
-        throw new TypeError("Unexpected " + nextType + " at " + index + ", expected " + type);
-    };
-    var consumeText = function () {
-        var result = "";
-        var value;
-        // tslint:disable-next-line
-        while ((value = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR"))) {
-            result += value;
-        }
-        return result;
-    };
-    while (i < tokens.length) {
-        var char = tryConsume("CHAR");
-        var name = tryConsume("NAME");
-        var pattern = tryConsume("PATTERN");
-        if (name || pattern) {
-            var prefix = char || "";
-            if (prefixes.indexOf(prefix) === -1) {
-                path += prefix;
-                prefix = "";
-            }
-            if (path) {
-                result.push(path);
-                path = "";
-            }
-            result.push({
-                name: name || key++,
-                prefix: prefix,
-                suffix: "",
-                pattern: pattern || defaultPattern,
-                modifier: tryConsume("MODIFIER") || ""
-            });
-            continue;
-        }
-        var value = char || tryConsume("ESCAPED_CHAR");
-        if (value) {
-            path += value;
-            continue;
-        }
-        if (path) {
-            result.push(path);
-            path = "";
-        }
-        var open = tryConsume("OPEN");
-        if (open) {
-            var prefix = consumeText();
-            var name_1 = tryConsume("NAME") || "";
-            var pattern_1 = tryConsume("PATTERN") || "";
-            var suffix = consumeText();
-            mustConsume("CLOSE");
-            result.push({
-                name: name_1 || (pattern_1 ? key++ : ""),
-                pattern: name_1 && !pattern_1 ? defaultPattern : pattern_1,
-                prefix: prefix,
-                suffix: suffix,
-                modifier: tryConsume("MODIFIER") || ""
-            });
-            continue;
-        }
-        mustConsume("END");
+    globalize () {
+        window[namespace] = this;
     }
-    return result;
-}
-/**
- * Create path match function from `path-to-regexp` spec.
- */
-function match(str, options) {
-    var keys = [];
-    var re = pathToRegexp(str, keys, options);
-    return regexpToFunction(re, keys, options);
-}
-/**
- * Create a path match function from `path-to-regexp` output.
- */
-function regexpToFunction(re, keys, options) {
-    if (options === void 0) { options = {}; }
-    var _a = options.decode, decode = _a === void 0 ? function (x) { return x; } : _a;
-    return function (pathname) {
-        var m = re.exec(pathname);
-        if (!m)
-            return false;
-        var path = m[0], index = m.index;
-        var params = Object.create(null);
-        var _loop_1 = function (i) {
-            // tslint:disable-next-line
-            if (m[i] === undefined)
-                return "continue";
-            var key = keys[i - 1];
-            if (key.modifier === "*" || key.modifier === "+") {
-                params[key.name] = m[i].split(key.prefix + key.suffix).map(function (value) {
-                    return decode(value, key);
-                });
-            }
-            else {
-                params[key.name] = decode(m[i], key);
-            }
-        };
-        for (var i = 1; i < m.length; i++) {
-            _loop_1(i);
-        }
-        return { path: path, index: index, params: params };
-    };
-}
-/**
- * Escape a regular expression string.
- */
-function escapeString(str) {
-    return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
-}
-/**
- * Get the flags for a regexp from the options.
- */
-function flags(options) {
-    return options && options.sensitive ? "" : "i";
-}
-/**
- * Pull out keys from a regexp.
- */
-function regexpToRegexp(path, keys) {
-    if (!keys)
-        return path;
-    // Use a negative lookahead to match only capturing groups.
-    var groups = path.source.match(/\((?!\?)/g);
-    if (groups) {
-        for (var i = 0; i < groups.length; i++) {
-            keys.push({
-                name: i,
-                prefix: "",
-                suffix: "",
-                modifier: "",
-                pattern: ""
-            });
-        }
+    getRootElement() {
+        return document.getElementById(this.id)
     }
-    return path;
-}
-/**
- * Transform an array into a regexp.
- */
-function arrayToRegexp(paths, keys, options) {
-    var parts = paths.map(function (path) { return pathToRegexp(path, keys, options).source; });
-    return new RegExp("(?:" + parts.join("|") + ")", flags(options));
-}
-/**
- * Create a path regexp from string input.
- */
-function stringToRegexp(path, keys, options) {
-    return tokensToRegexp(parse(path, options), keys, options);
-}
-/**
- * Expose a function for taking tokens and returning a RegExp.
- */
-function tokensToRegexp(tokens, keys, options) {
-    if (options === void 0) { options = {}; }
-    var _a = options.strict, strict = _a === void 0 ? false : _a, _b = options.start, start = _b === void 0 ? true : _b, _c = options.end, end = _c === void 0 ? true : _c, _d = options.encode, encode = _d === void 0 ? function (x) { return x; } : _d;
-    var endsWith = "[" + escapeString(options.endsWith || "") + "]|$";
-    var delimiter = "[" + escapeString(options.delimiter || "/#?") + "]";
-    var route = start ? "^" : "";
-    // Iterate over the tokens and create our regexp string.
-    for (var _i = 0, tokens_1 = tokens; _i < tokens_1.length; _i++) {
-        var token = tokens_1[_i];
-        if (typeof token === "string") {
-            route += escapeString(encode(token));
-        }
-        else {
-            var prefix = escapeString(encode(token.prefix));
-            var suffix = escapeString(encode(token.suffix));
-            if (token.pattern) {
-                if (keys)
-                    keys.push(token);
-                if (prefix || suffix) {
-                    if (token.modifier === "+" || token.modifier === "*") {
-                        var mod = token.modifier === "*" ? "?" : "";
-                        route += "(?:" + prefix + "((?:" + token.pattern + ")(?:" + suffix + prefix + "(?:" + token.pattern + "))*)" + suffix + ")" + mod;
-                    }
-                    else {
-                        route += "(?:" + prefix + "(" + token.pattern + ")" + suffix + ")" + token.modifier;
-                    }
-                }
-                else {
-                    route += "(" + token.pattern + ")" + token.modifier;
-                }
-            }
-            else {
-                route += "(?:" + prefix + suffix + ")" + token.modifier;
-            }
-        }
+    renderApp () {
+        this.getRootElement()
+            .append(this.component(this));
     }
-    if (end) {
-        if (!strict)
-            route += delimiter + "?";
-        route += !options.endsWith ? "$" : "(?=" + endsWith + ")";
+    renderRoutes () {
+        return this.router.render()
     }
-    else {
-        var endToken = tokens[tokens.length - 1];
-        var isEndDelimited = typeof endToken === "string"
-            ? delimiter.indexOf(endToken[endToken.length - 1]) > -1
-            : // tslint:disable-next-line
-                endToken === undefined;
-        if (!strict) {
-            route += "(?:" + delimiter + "(?=" + endsWith + "))?";
-        }
-        if (!isEndDelimited) {
-            route += "(?=" + delimiter + "|" + endsWith + ")";
-        }
-    }
-    return new RegExp(route, flags(options));
-}
-/**
- * Normalize the given path string, returning a regular expression.
- *
- * An empty array can be passed in for the keys, which will hold the
- * placeholder key descriptions. For example, using `/user/:id`, `keys` will
- * contain `[{ name: 'id', delimiter: '/', optional: false, repeat: false }]`.
- */
-function pathToRegexp(path, keys, options) {
-    if (path instanceof RegExp)
-        return regexpToRegexp(path, keys);
-    if (Array.isArray(path))
-        return arrayToRegexp(path, keys, options);
-    return stringToRegexp(path, keys, options);
-}
+};
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -17451,134 +17144,6 @@ var lodash_15 = lodash.omitBy;
 var lodash_16 = lodash.reject;
 var lodash_17 = lodash.remove;
 
-// Copyright Joyent, Inc. and other Node contributors.
-
-// If obj.hasOwnProperty has been overridden, then calling
-// obj.hasOwnProperty(prop) will break.
-// See: https://github.com/joyent/node/issues/1707
-function hasOwnProperty(obj, prop) {
-  return Object.prototype.hasOwnProperty.call(obj, prop);
-}
-
-var decode = function(qs, sep, eq, options) {
-  sep = sep || '&';
-  eq = eq || '=';
-  var obj = {};
-
-  if (typeof qs !== 'string' || qs.length === 0) {
-    return obj;
-  }
-
-  var regexp = /\+/g;
-  qs = qs.split(sep);
-
-  var maxKeys = 1000;
-  if (options && typeof options.maxKeys === 'number') {
-    maxKeys = options.maxKeys;
-  }
-
-  var len = qs.length;
-  // maxKeys <= 0 means that we should not limit keys count
-  if (maxKeys > 0 && len > maxKeys) {
-    len = maxKeys;
-  }
-
-  for (var i = 0; i < len; ++i) {
-    var x = qs[i].replace(regexp, '%20'),
-        idx = x.indexOf(eq),
-        kstr, vstr, k, v;
-
-    if (idx >= 0) {
-      kstr = x.substr(0, idx);
-      vstr = x.substr(idx + 1);
-    } else {
-      kstr = x;
-      vstr = '';
-    }
-
-    k = decodeURIComponent(kstr);
-    v = decodeURIComponent(vstr);
-
-    if (!hasOwnProperty(obj, k)) {
-      obj[k] = v;
-    } else if (Array.isArray(obj[k])) {
-      obj[k].push(v);
-    } else {
-      obj[k] = [obj[k], v];
-    }
-  }
-
-  return obj;
-};
-
-// Copyright Joyent, Inc. and other Node contributors.
-
-var stringifyPrimitive = function(v) {
-  switch (typeof v) {
-    case 'string':
-      return v;
-
-    case 'boolean':
-      return v ? 'true' : 'false';
-
-    case 'number':
-      return isFinite(v) ? v : '';
-
-    default:
-      return '';
-  }
-};
-
-var encode = function(obj, sep, eq, name) {
-  sep = sep || '&';
-  eq = eq || '=';
-  if (obj === null) {
-    obj = undefined;
-  }
-
-  if (typeof obj === 'object') {
-    return Object.keys(obj).map(function(k) {
-      var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
-      if (Array.isArray(obj[k])) {
-        return obj[k].map(function(v) {
-          return ks + encodeURIComponent(stringifyPrimitive(v));
-        }).join(sep);
-      } else {
-        return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
-      }
-    }).join(sep);
-
-  }
-
-  if (!name) return '';
-  return encodeURIComponent(stringifyPrimitive(name)) + eq +
-         encodeURIComponent(stringifyPrimitive(obj));
-};
-
-var querystring = createCommonjsModule(function (module, exports) {
-
-exports.decode = exports.parse = decode;
-exports.encode = exports.stringify = encode;
-});
-var querystring_1 = querystring.decode;
-var querystring_2 = querystring.parse;
-var querystring_3 = querystring.encode;
-var querystring_4 = querystring.stringify;
-
-var qs = {
-    parse: (search) => {
-        search = search.replace(/^\?/, '');
-        return querystring.parse(search)
-    },
-    stringify: obj => {
-        return querystring.stringify(lodash_15(obj, lodash_13))
-    }
-};
-
-const namespace = '__ARSNL__';
-
-const getApp = () => lodash_2(window, namespace);
-
 class EventManager {
     constructor () {
         this.listeners = [];
@@ -17827,7 +17392,6 @@ const watchStates = (el, config, states) => {
     states.forEach((state) => {
         subscribe(state, () => {
             el = render$1(el, resolveConfig(config));
-            getApp().afterRender();
         });
     });
 };
@@ -17838,6 +17402,465 @@ const r = (config={}, states=[]) => {
     watchStates(el, config, states);
     return el
 };
+
+/**
+ * Tokenize input string.
+ */
+function lexer(str) {
+    var tokens = [];
+    var i = 0;
+    while (i < str.length) {
+        var char = str[i];
+        if (char === "*" || char === "+" || char === "?") {
+            tokens.push({ type: "MODIFIER", index: i, value: str[i++] });
+            continue;
+        }
+        if (char === "\\") {
+            tokens.push({ type: "ESCAPED_CHAR", index: i++, value: str[i++] });
+            continue;
+        }
+        if (char === "{") {
+            tokens.push({ type: "OPEN", index: i, value: str[i++] });
+            continue;
+        }
+        if (char === "}") {
+            tokens.push({ type: "CLOSE", index: i, value: str[i++] });
+            continue;
+        }
+        if (char === ":") {
+            var name = "";
+            var j = i + 1;
+            while (j < str.length) {
+                var code = str.charCodeAt(j);
+                if (
+                // `0-9`
+                (code >= 48 && code <= 57) ||
+                    // `A-Z`
+                    (code >= 65 && code <= 90) ||
+                    // `a-z`
+                    (code >= 97 && code <= 122) ||
+                    // `_`
+                    code === 95) {
+                    name += str[j++];
+                    continue;
+                }
+                break;
+            }
+            if (!name)
+                throw new TypeError("Missing parameter name at " + i);
+            tokens.push({ type: "NAME", index: i, value: name });
+            i = j;
+            continue;
+        }
+        if (char === "(") {
+            var count = 1;
+            var pattern = "";
+            var j = i + 1;
+            if (str[j] === "?") {
+                throw new TypeError("Pattern cannot start with \"?\" at " + j);
+            }
+            while (j < str.length) {
+                if (str[j] === "\\") {
+                    pattern += str[j++] + str[j++];
+                    continue;
+                }
+                if (str[j] === ")") {
+                    count--;
+                    if (count === 0) {
+                        j++;
+                        break;
+                    }
+                }
+                else if (str[j] === "(") {
+                    count++;
+                    if (str[j + 1] !== "?") {
+                        throw new TypeError("Capturing groups are not allowed at " + j);
+                    }
+                }
+                pattern += str[j++];
+            }
+            if (count)
+                throw new TypeError("Unbalanced pattern at " + i);
+            if (!pattern)
+                throw new TypeError("Missing pattern at " + i);
+            tokens.push({ type: "PATTERN", index: i, value: pattern });
+            i = j;
+            continue;
+        }
+        tokens.push({ type: "CHAR", index: i, value: str[i++] });
+    }
+    tokens.push({ type: "END", index: i, value: "" });
+    return tokens;
+}
+/**
+ * Parse a string for the raw tokens.
+ */
+function parse(str, options) {
+    if (options === void 0) { options = {}; }
+    var tokens = lexer(str);
+    var _a = options.prefixes, prefixes = _a === void 0 ? "./" : _a;
+    var defaultPattern = "[^" + escapeString(options.delimiter || "/#?") + "]+?";
+    var result = [];
+    var key = 0;
+    var i = 0;
+    var path = "";
+    var tryConsume = function (type) {
+        if (i < tokens.length && tokens[i].type === type)
+            return tokens[i++].value;
+    };
+    var mustConsume = function (type) {
+        var value = tryConsume(type);
+        if (value !== undefined)
+            return value;
+        var _a = tokens[i], nextType = _a.type, index = _a.index;
+        throw new TypeError("Unexpected " + nextType + " at " + index + ", expected " + type);
+    };
+    var consumeText = function () {
+        var result = "";
+        var value;
+        // tslint:disable-next-line
+        while ((value = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR"))) {
+            result += value;
+        }
+        return result;
+    };
+    while (i < tokens.length) {
+        var char = tryConsume("CHAR");
+        var name = tryConsume("NAME");
+        var pattern = tryConsume("PATTERN");
+        if (name || pattern) {
+            var prefix = char || "";
+            if (prefixes.indexOf(prefix) === -1) {
+                path += prefix;
+                prefix = "";
+            }
+            if (path) {
+                result.push(path);
+                path = "";
+            }
+            result.push({
+                name: name || key++,
+                prefix: prefix,
+                suffix: "",
+                pattern: pattern || defaultPattern,
+                modifier: tryConsume("MODIFIER") || ""
+            });
+            continue;
+        }
+        var value = char || tryConsume("ESCAPED_CHAR");
+        if (value) {
+            path += value;
+            continue;
+        }
+        if (path) {
+            result.push(path);
+            path = "";
+        }
+        var open = tryConsume("OPEN");
+        if (open) {
+            var prefix = consumeText();
+            var name_1 = tryConsume("NAME") || "";
+            var pattern_1 = tryConsume("PATTERN") || "";
+            var suffix = consumeText();
+            mustConsume("CLOSE");
+            result.push({
+                name: name_1 || (pattern_1 ? key++ : ""),
+                pattern: name_1 && !pattern_1 ? defaultPattern : pattern_1,
+                prefix: prefix,
+                suffix: suffix,
+                modifier: tryConsume("MODIFIER") || ""
+            });
+            continue;
+        }
+        mustConsume("END");
+    }
+    return result;
+}
+/**
+ * Create path match function from `path-to-regexp` spec.
+ */
+function match(str, options) {
+    var keys = [];
+    var re = pathToRegexp(str, keys, options);
+    return regexpToFunction(re, keys, options);
+}
+/**
+ * Create a path match function from `path-to-regexp` output.
+ */
+function regexpToFunction(re, keys, options) {
+    if (options === void 0) { options = {}; }
+    var _a = options.decode, decode = _a === void 0 ? function (x) { return x; } : _a;
+    return function (pathname) {
+        var m = re.exec(pathname);
+        if (!m)
+            return false;
+        var path = m[0], index = m.index;
+        var params = Object.create(null);
+        var _loop_1 = function (i) {
+            // tslint:disable-next-line
+            if (m[i] === undefined)
+                return "continue";
+            var key = keys[i - 1];
+            if (key.modifier === "*" || key.modifier === "+") {
+                params[key.name] = m[i].split(key.prefix + key.suffix).map(function (value) {
+                    return decode(value, key);
+                });
+            }
+            else {
+                params[key.name] = decode(m[i], key);
+            }
+        };
+        for (var i = 1; i < m.length; i++) {
+            _loop_1(i);
+        }
+        return { path: path, index: index, params: params };
+    };
+}
+/**
+ * Escape a regular expression string.
+ */
+function escapeString(str) {
+    return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
+}
+/**
+ * Get the flags for a regexp from the options.
+ */
+function flags(options) {
+    return options && options.sensitive ? "" : "i";
+}
+/**
+ * Pull out keys from a regexp.
+ */
+function regexpToRegexp(path, keys) {
+    if (!keys)
+        return path;
+    // Use a negative lookahead to match only capturing groups.
+    var groups = path.source.match(/\((?!\?)/g);
+    if (groups) {
+        for (var i = 0; i < groups.length; i++) {
+            keys.push({
+                name: i,
+                prefix: "",
+                suffix: "",
+                modifier: "",
+                pattern: ""
+            });
+        }
+    }
+    return path;
+}
+/**
+ * Transform an array into a regexp.
+ */
+function arrayToRegexp(paths, keys, options) {
+    var parts = paths.map(function (path) { return pathToRegexp(path, keys, options).source; });
+    return new RegExp("(?:" + parts.join("|") + ")", flags(options));
+}
+/**
+ * Create a path regexp from string input.
+ */
+function stringToRegexp(path, keys, options) {
+    return tokensToRegexp(parse(path, options), keys, options);
+}
+/**
+ * Expose a function for taking tokens and returning a RegExp.
+ */
+function tokensToRegexp(tokens, keys, options) {
+    if (options === void 0) { options = {}; }
+    var _a = options.strict, strict = _a === void 0 ? false : _a, _b = options.start, start = _b === void 0 ? true : _b, _c = options.end, end = _c === void 0 ? true : _c, _d = options.encode, encode = _d === void 0 ? function (x) { return x; } : _d;
+    var endsWith = "[" + escapeString(options.endsWith || "") + "]|$";
+    var delimiter = "[" + escapeString(options.delimiter || "/#?") + "]";
+    var route = start ? "^" : "";
+    // Iterate over the tokens and create our regexp string.
+    for (var _i = 0, tokens_1 = tokens; _i < tokens_1.length; _i++) {
+        var token = tokens_1[_i];
+        if (typeof token === "string") {
+            route += escapeString(encode(token));
+        }
+        else {
+            var prefix = escapeString(encode(token.prefix));
+            var suffix = escapeString(encode(token.suffix));
+            if (token.pattern) {
+                if (keys)
+                    keys.push(token);
+                if (prefix || suffix) {
+                    if (token.modifier === "+" || token.modifier === "*") {
+                        var mod = token.modifier === "*" ? "?" : "";
+                        route += "(?:" + prefix + "((?:" + token.pattern + ")(?:" + suffix + prefix + "(?:" + token.pattern + "))*)" + suffix + ")" + mod;
+                    }
+                    else {
+                        route += "(?:" + prefix + "(" + token.pattern + ")" + suffix + ")" + token.modifier;
+                    }
+                }
+                else {
+                    route += "(" + token.pattern + ")" + token.modifier;
+                }
+            }
+            else {
+                route += "(?:" + prefix + suffix + ")" + token.modifier;
+            }
+        }
+    }
+    if (end) {
+        if (!strict)
+            route += delimiter + "?";
+        route += !options.endsWith ? "$" : "(?=" + endsWith + ")";
+    }
+    else {
+        var endToken = tokens[tokens.length - 1];
+        var isEndDelimited = typeof endToken === "string"
+            ? delimiter.indexOf(endToken[endToken.length - 1]) > -1
+            : // tslint:disable-next-line
+                endToken === undefined;
+        if (!strict) {
+            route += "(?:" + delimiter + "(?=" + endsWith + "))?";
+        }
+        if (!isEndDelimited) {
+            route += "(?=" + delimiter + "|" + endsWith + ")";
+        }
+    }
+    return new RegExp(route, flags(options));
+}
+/**
+ * Normalize the given path string, returning a regular expression.
+ *
+ * An empty array can be passed in for the keys, which will hold the
+ * placeholder key descriptions. For example, using `/user/:id`, `keys` will
+ * contain `[{ name: 'id', delimiter: '/', optional: false, repeat: false }]`.
+ */
+function pathToRegexp(path, keys, options) {
+    if (path instanceof RegExp)
+        return regexpToRegexp(path, keys);
+    if (Array.isArray(path))
+        return arrayToRegexp(path, keys, options);
+    return stringToRegexp(path, keys, options);
+}
+
+// Copyright Joyent, Inc. and other Node contributors.
+
+// If obj.hasOwnProperty has been overridden, then calling
+// obj.hasOwnProperty(prop) will break.
+// See: https://github.com/joyent/node/issues/1707
+function hasOwnProperty(obj, prop) {
+  return Object.prototype.hasOwnProperty.call(obj, prop);
+}
+
+var decode = function(qs, sep, eq, options) {
+  sep = sep || '&';
+  eq = eq || '=';
+  var obj = {};
+
+  if (typeof qs !== 'string' || qs.length === 0) {
+    return obj;
+  }
+
+  var regexp = /\+/g;
+  qs = qs.split(sep);
+
+  var maxKeys = 1000;
+  if (options && typeof options.maxKeys === 'number') {
+    maxKeys = options.maxKeys;
+  }
+
+  var len = qs.length;
+  // maxKeys <= 0 means that we should not limit keys count
+  if (maxKeys > 0 && len > maxKeys) {
+    len = maxKeys;
+  }
+
+  for (var i = 0; i < len; ++i) {
+    var x = qs[i].replace(regexp, '%20'),
+        idx = x.indexOf(eq),
+        kstr, vstr, k, v;
+
+    if (idx >= 0) {
+      kstr = x.substr(0, idx);
+      vstr = x.substr(idx + 1);
+    } else {
+      kstr = x;
+      vstr = '';
+    }
+
+    k = decodeURIComponent(kstr);
+    v = decodeURIComponent(vstr);
+
+    if (!hasOwnProperty(obj, k)) {
+      obj[k] = v;
+    } else if (Array.isArray(obj[k])) {
+      obj[k].push(v);
+    } else {
+      obj[k] = [obj[k], v];
+    }
+  }
+
+  return obj;
+};
+
+// Copyright Joyent, Inc. and other Node contributors.
+
+var stringifyPrimitive = function(v) {
+  switch (typeof v) {
+    case 'string':
+      return v;
+
+    case 'boolean':
+      return v ? 'true' : 'false';
+
+    case 'number':
+      return isFinite(v) ? v : '';
+
+    default:
+      return '';
+  }
+};
+
+var encode = function(obj, sep, eq, name) {
+  sep = sep || '&';
+  eq = eq || '=';
+  if (obj === null) {
+    obj = undefined;
+  }
+
+  if (typeof obj === 'object') {
+    return Object.keys(obj).map(function(k) {
+      var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
+      if (Array.isArray(obj[k])) {
+        return obj[k].map(function(v) {
+          return ks + encodeURIComponent(stringifyPrimitive(v));
+        }).join(sep);
+      } else {
+        return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
+      }
+    }).join(sep);
+
+  }
+
+  if (!name) return '';
+  return encodeURIComponent(stringifyPrimitive(name)) + eq +
+         encodeURIComponent(stringifyPrimitive(obj));
+};
+
+var querystring = createCommonjsModule(function (module, exports) {
+
+exports.decode = exports.parse = decode;
+exports.encode = exports.stringify = encode;
+});
+var querystring_1 = querystring.decode;
+var querystring_2 = querystring.parse;
+var querystring_3 = querystring.encode;
+var querystring_4 = querystring.stringify;
+
+var qs = {
+    parse: (search) => {
+        search = search.replace(/^\?/, '');
+        return querystring.parse(search)
+    },
+    stringify: obj => {
+        return querystring.stringify(lodash_15(obj, lodash_13))
+    }
+};
+
+const getApp = () => lodash_2(window, namespace);
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -17875,7 +17898,7 @@ const EmptyRoute = () => '';
 const PAGE_NOT_FOUND = '/404';
 
 class Router {
-    constructor (routes) {
+    constructor (routes, options = {}) {
         this.routes = routes || {};
         this.className = `arsnl-router-${generateId()}`;
         this.route = State({
@@ -17884,13 +17907,15 @@ class Router {
                 component: this.get404(),
             },
         });
+        this.onBeforeRouteRender = options.onBeforeRouteRender;
+        this.onAfterRouteRender = options.onAfterRouteRender;
         this.handleListeners();
         this.setRoute();
         this.subscribeToStateChanges();
     }
     subscribeToStateChanges () {
         window.addEventListener("popstate", () => {
-            window.location.pathname = window.location.pathname;
+            window.location.pathname = window.location.pathname; // eslint-disable-line
         });
     }
     handleListeners () {
@@ -17932,6 +17957,8 @@ class Router {
             found,
             params,
         } = this.findRoute(path);
+        this.onBeforeRouteRender();
+        waitForRender(() => this.onAfterRouteRender());
         if (found) {
             this.route.current = {
                 params,
@@ -17941,15 +17968,11 @@ class Router {
             this.route.current = this.get404();
         }
     }
-    afterRender () {
-        getApp().afterRender();
-    }
     setTitle (str) {
         const title = lodash_16([getApp().title, str], lodash_6).join(' | ');
         document.title = title;
     }
     render () {
-        waitForRender(() => this.afterRender());
         return r(() => {
             if (!this.is.listening) {
                 this.is.listening = true;
@@ -17967,52 +17990,289 @@ class Router {
     }
 }
 
-const App = class App {
-    constructor(config){
-        this.title = config.title || '';
-        this.id = config.id;
-        this.onAfterRender = config.onAfterRender;
-        this.component = config.component;
-        this.router = new Router(config.routes);
-        this.globalize();
-        this.renderApp();
-    }
-    globalize () {
-        window[namespace] = this;
-    }
-    getRootElement() {
-        return document.getElementById(this.id)
-    }
-    renderApp () {
-        this.getRootElement()
-            .append(this.component(this));
-    }
-    renderRoutes () {
-        this.beforeRender();
-        return this.router.render()
-    }
-    afterRender () {
-        if (this.onAfterRender) {
-            this.onAfterRender();
+const build = tag => (
+    (configOrRender, configOrTrackers) => {
+        if (isConfig(configOrRender)) {
+            return r(() => {
+                const conf = resolveConfig(configOrRender);
+                return {
+                    ...conf,
+                    tag
+                }
+            }, configOrTrackers)
         }
-    }
-    beforeRender () {
-        if (this.onBeforeRender) {
-            this.onBeforeRender();
+
+        if (isConfig(configOrTrackers)) {
+            const conf = resolveConfig(configOrTrackers);
+            return r({
+                ...conf,
+                render: configOrRender,
+                tag
+            })
         }
+
+        return r({
+            render: configOrRender,
+            tag
+        })
     }
+);
+const a =           build('a');
+const abbr =        build('abbr');
+const address =     build('address');
+const area =        build('area');
+const article =     build('article');
+const aside =       build('aside');
+const audio =       build('audio');
+const b =           build('b');
+const base =        build('base');
+const bdi =         build('bdi');
+const bdo =         build('bdo');
+const blockquote =  build('blockquote');
+const body =        build('body');
+const br =          build('br');
+const button =      build('button');
+const canvas =      build('canvas');
+const caption =     build('caption');
+const cite =        build('cite');
+const code =        build('code');
+const col =         build('col');
+const colgroup =    build('colgroup');
+const command =     build('command');
+const comment =     build('comment');
+const datalist =    build('datalist');
+const dd =          build('dd');
+const del =         build('del');
+const details =     build('details');
+const dfn =         build('dfn');
+const div =         build('div');
+const dl =          build('dl');
+const dt =          build('dt');
+const em =          build('em');
+const embed =       build('embed');
+const fieldset =    build('fieldset');
+const figcaption =  build('figcaption');
+const figure =      build('figure');
+const footer =      build('footer');
+const form =        build('form');
+const h1 =          build('h1');
+const h2 =          build('h2');
+const h3 =          build('h3');
+const h4 =          build('h4');
+const h5 =          build('h5');
+const h6 =          build('h6');
+const head =        build('head');
+const header =      build('header');
+const hgroup =      build('hgroup');
+const hr =          build('hr');
+const html =        build('html');
+const i =           build('i');
+const iframe =      build('iframe');
+const img =         build('img');
+const input =       build('input');
+const ins =         build('ins');
+const kbd =         build('kbd');
+const keygen =      build('keygen');
+const label =       build('label');
+const legend =      build('legend');
+const li =          build('li');
+const link =        build('link');
+const map =         build('map');
+const mark =        build('mark');
+const menu =        build('menu');
+const meta =        build('meta');
+const meter =       build('meter');
+const nav =         build('nav');
+const noscript =    build('noscript');
+const object =      build('object');
+const ol =          build('ol');
+const optgroup =    build('optgroup');
+const option =      build('option');
+const output =      build('output');
+const p =           build('p');
+const path =        build('svg:path');
+const param =       build('param');
+const pre =         build('pre');
+const progress =    build('progress');
+const q =           build('q');
+const rp =          build('rp');
+const rt =          build('rt');
+const ruby =        build('ruby');
+const s =           build('s');
+const samp =        build('samp');
+const script =      build('script');
+const section =     build('section');
+const select =      build('select');
+const small =       build('small');
+const source =      build('source');
+const span =        build('span');
+const strong =      build('strong');
+const style =       build('style');
+const sub =         build('sub');
+const summary =     build('summary');
+const sup =         build('sup');
+// svg moved to bottom
+const table =       build('table');
+const tbody =       build('tbody');
+const td =          build('td');
+const textarea =    build('textarea');
+const tfoot =       build('tfoot');
+const th =          build('th');
+const thead =       build('thead');
+const time =        build('time');
+const title =       build('title');
+const tr =          build('tr');
+const track =       build('track');
+const u =           build('u');
+const ul =          build('ul');
+const _var =        build('var');
+const video =       build('video');
+const wbr =         build('wbr');
+
+const svg = (...args) => {
+    if (args.length < 3 && lodash_12(args[0])) {
+        const additionalProps = args[1];
+        const htmlStr = args[0];
+        const props = {};
+        const attributes = htmlStr.match(/<svg [^>]+>/g)[0].match(/([a-zA-Z\-\:]+)="([a-zA-Z\d\.\_\s\;\-\:\/]+)"/g); // eslint-disable-line
+        const middle = htmlStr.replace(/(<svg [^>]+>)|(<\/svg>)/g, '');
+        for (var i = 0; i < attributes.length; i++) {
+            const attr = attributes[i].split('=');
+            props[attr[0]] = attr[1].replace(/"/g, '');
+        }
+        const el = build('svg')({
+            preserveAspectRatio: "xMidYMid meet",
+            viewBox: '0 0 32 32',
+            ...props,
+            ...additionalProps,
+            dangerouslySetInnerHTML: middle
+        });
+        return el
+    }
+    return build('svg')(...args)
 };
 
 exports.App = App;
 exports.Link = Link;
 exports.Router = Router;
 exports.State = State;
+exports._var = _var;
+exports.a = a;
+exports.abbr = abbr;
+exports.address = address;
+exports.area = area;
+exports.article = article;
+exports.aside = aside;
+exports.audio = audio;
+exports.b = b;
+exports.base = base;
+exports.bdi = bdi;
+exports.bdo = bdo;
+exports.blockquote = blockquote;
+exports.body = body;
+exports.br = br;
+exports.button = button;
+exports.canvas = canvas;
+exports.caption = caption;
+exports.cite = cite;
+exports.code = code;
+exports.col = col;
+exports.colgroup = colgroup;
+exports.command = command;
+exports.comment = comment;
+exports.datalist = datalist;
+exports.dd = dd;
+exports.del = del;
+exports.details = details;
+exports.dfn = dfn;
+exports.div = div;
+exports.dl = dl;
+exports.dt = dt;
+exports.em = em;
+exports.embed = embed;
 exports.extract = extract;
+exports.fieldset = fieldset;
+exports.figcaption = figcaption;
+exports.figure = figure;
+exports.footer = footer;
+exports.form = form;
+exports.h1 = h1;
+exports.h2 = h2;
+exports.h3 = h3;
+exports.h4 = h4;
+exports.h5 = h5;
+exports.h6 = h6;
+exports.head = head;
+exports.header = header;
+exports.hgroup = hgroup;
+exports.hr = hr;
+exports.html = html;
+exports.i = i;
+exports.iframe = iframe;
+exports.img = img;
+exports.input = input;
+exports.ins = ins;
 exports.isConfig = isConfig;
 exports.isDomNode = isDomNode;
+exports.kbd = kbd;
+exports.keygen = keygen;
+exports.label = label;
+exports.legend = legend;
+exports.li = li;
+exports.link = link;
+exports.map = map;
+exports.mark = mark;
+exports.menu = menu;
+exports.meta = meta;
+exports.meter = meter;
 exports.namespace = namespace;
+exports.nav = nav;
 exports.navigate = navigate;
+exports.noscript = noscript;
+exports.object = object;
+exports.ol = ol;
+exports.optgroup = optgroup;
+exports.option = option;
+exports.output = output;
+exports.p = p;
+exports.param = param;
+exports.path = path;
+exports.pre = pre;
+exports.progress = progress;
+exports.q = q;
 exports.r = r;
 exports.resolveConfig = resolveConfig;
+exports.rp = rp;
+exports.rt = rt;
+exports.ruby = ruby;
+exports.s = s;
+exports.samp = samp;
+exports.script = script;
+exports.section = section;
+exports.select = select;
+exports.small = small;
+exports.source = source;
+exports.span = span;
+exports.strong = strong;
+exports.style = style;
+exports.sub = sub;
 exports.subscribe = subscribe;
+exports.summary = summary;
+exports.sup = sup;
+exports.svg = svg;
+exports.table = table;
+exports.tbody = tbody;
+exports.td = td;
+exports.textarea = textarea;
+exports.tfoot = tfoot;
+exports.th = th;
+exports.thead = thead;
+exports.time = time;
+exports.title = title;
+exports.tr = tr;
+exports.track = track;
+exports.u = u;
+exports.ul = ul;
+exports.video = video;
 exports.waitForRender = waitForRender;
+exports.wbr = wbr;

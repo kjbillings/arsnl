@@ -9,7 +9,6 @@ import { State, subscribe } from '../State'
 import { generateId } from './generate-id'
 import routerEvents from './router-events'
 import getRedirectHandler from './redirect'
-import { navigate } from './navigate'
 
 const EmptyRoute = () => ''
 
@@ -19,7 +18,7 @@ export { Link } from './Link'
 export { navigate } from './navigate'
 
 export class Router {
-    constructor (routes) {
+    constructor (routes, options = {}) {
         this.routes = routes || {}
         this.className = `arsnl-router-${generateId()}`
         this.route = State({
@@ -28,13 +27,15 @@ export class Router {
                 component: this.get404(),
             },
         })
+        this.onBeforeRouteRender = options.onBeforeRouteRender
+        this.onAfterRouteRender = options.onAfterRouteRender
         this.handleListeners()
         this.setRoute()
         this.subscribeToStateChanges()
     }
     subscribeToStateChanges () {
         window.addEventListener("popstate", () => {
-            window.location.pathname = window.location.pathname
+            window.location.pathname = window.location.pathname // eslint-disable-line
         })
     }
     handleListeners () {
@@ -72,11 +73,12 @@ export class Router {
     }
     setRoute () {
         const path = window.location.pathname
-        let route = EmptyRoute
         const {
             found,
             params,
         } = this.findRoute(path)
+        this.onBeforeRouteRender()
+        waitForRender(() => this.onAfterRouteRender())
         if (found) {
             this.route.current = {
                 params,
@@ -86,15 +88,11 @@ export class Router {
             this.route.current = this.get404()
         }
     }
-    afterRender () {
-        getApp().afterRender()
-    }
     setTitle (str) {
         const title = reject([getApp().title, str], isEmpty).join(' | ')
         document.title = title
     }
     render () {
-        waitForRender(() => this.afterRender())
         return r(() => {
             if (!this.is.listening) {
                 this.is.listening = true

@@ -1,6 +1,5 @@
-import { isObject, isFunction } from 'lodash'
+import { isFunction } from 'lodash'
 
-import { getApp } from '../App/getters'
 import { subscribe } from '../State'
 import createElement from './create-element'
 import setContents from './set-contents'
@@ -44,7 +43,6 @@ const watchStates = (el, config, states) => {
     states.forEach((state) => {
         subscribe(state, () => {
             el = render(el, resolveConfig(config))
-            getApp().afterRender()
         })
     })
 }
