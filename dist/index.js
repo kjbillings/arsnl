@@ -17346,7 +17346,7 @@ var setRest = (el, config) => {
     });
 };
 
-const isConfig$1 = args => (
+const isConfig = args => (
     (
         !lodash_13(args)
         && !lodash_9(args)
@@ -17356,11 +17356,11 @@ const isConfig$1 = args => (
         && !isDomNode(args)
     ) || (
         lodash_8(args)
-        && isConfig$1(args())
+        && isConfig(args())
     )
 );
 
-const resolveConfig$1 = (config) => (
+const resolveConfig = (config) => (
     lodash_8(config)
         ? config()
         : config
@@ -17374,13 +17374,13 @@ const render$1 = (el, config) => {
 };
 
 const getNode = (config) => {
-    const resolvedConfig = resolveConfig$1(config);
+    const resolvedConfig = resolveConfig(config);
     const el = createElement(resolvedConfig);
     return render$1(el, resolvedConfig)
 };
 
 const handleOnLoad = (el, config) => {
-    const resolvedConfig = resolveConfig$1(config);
+    const resolvedConfig = resolveConfig(config);
     if (lodash_8(resolvedConfig.onLoad)) {
         waitForRender(() => {
             resolvedConfig.onLoad(el);
@@ -17391,12 +17391,12 @@ const handleOnLoad = (el, config) => {
 const watchStates = (el, config, states) => {
     states.forEach((state) => {
         subscribe(state, () => {
-            el = render$1(el, resolveConfig$1(config));
+            el = render$1(el, resolveConfig(config));
         });
     });
 };
 
-const r$1 = (config={}, states=[]) => {
+const r = (config={}, states=[]) => {
     const el = getNode(config);
     handleOnLoad(el, config);
     watchStates(el, config, states);
@@ -17880,7 +17880,7 @@ var getRedirectHandler = routerEvents => (
 );
 
 const Link = ({ path, tag='a', ...rest }) => (
-    r$1({
+    r({
         ...rest,
         tag,
         href: path || rest.href,
@@ -17977,7 +17977,7 @@ class Router {
         document.title = title;
     }
     render () {
-        return r$1(() => {
+        return r(() => {
             if (!this.is.listening) {
                 this.is.listening = true;
             }
@@ -18216,7 +18216,7 @@ exports.iframe = iframe;
 exports.img = img;
 exports.input = input;
 exports.ins = ins;
-exports.isConfig = isConfig$1;
+exports.isConfig = isConfig;
 exports.isDomNode = isDomNode;
 exports.kbd = kbd;
 exports.keygen = keygen;
@@ -18244,8 +18244,8 @@ exports.path = path;
 exports.pre = pre;
 exports.progress = progress;
 exports.q = q;
-exports.r = r$1;
-exports.resolveConfig = resolveConfig$1;
+exports.r = r;
+exports.resolveConfig = resolveConfig;
 exports.rp = rp;
 exports.rt = rt;
 exports.ruby = ruby;

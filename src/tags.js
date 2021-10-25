@@ -1,5 +1,5 @@
 import { isString } from 'lodash'
-export { r, isConfig, resolveConfig } from './Node'
+import { r, isConfig, resolveConfig } from './Node'
 
 const build = tag => (
     (configOrRender, configOrTrackers) => {
