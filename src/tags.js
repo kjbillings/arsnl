@@ -5,21 +5,29 @@ const build = tag => (
     (configOrRender, configOrTrackers) => {
         if (isConfig(configOrRender)) {
             return r(() => {
-                const conf = resolveConfig(configOrRender)
-                return {
-                    ...conf,
+                const {disabled, ...rest} = resolveConfig(configOrRender)
+                const props = {
+                    ...rest,
                     tag
                 }
+                if (disabled === true) {
+                  props.disabled = true
+                }
+                return props
             }, configOrTrackers)
         }
 
         if (isConfig(configOrTrackers)) {
-            const conf = resolveConfig(configOrTrackers)
-            return r({
-                ...conf,
+            const {disabled, ...rest} = resolveConfig(configOrTrackers)
+            const props = {
+                ...rest,
                 render: configOrRender,
                 tag
-            })
+            }
+            if (disabled === true) {
+              props.disabled = true
+            }
+            return r(props)
         }
 
         return r({

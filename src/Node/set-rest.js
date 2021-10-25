@@ -36,6 +36,10 @@ export default (el, config) => {
                 el[key] = value
                 return
             }
+            if (value === null) {
+              el.removeAttribute(key)
+              return
+            }
             el.setAttribute(key, value)
         }
     })
