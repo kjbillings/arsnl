@@ -17957,8 +17957,12 @@ class Router {
             found,
             params,
         } = this.findRoute(path);
-        this.onBeforeRouteRender();
-        waitForRender(() => this.onAfterRouteRender());
+        if (lodash_8(this.onBeforeRouteRender)) {
+          this.onBeforeRouteRender();
+        }
+        if (lodash_8(this.onAfterRouteRender)) {
+          waitForRender(() => this.onAfterRouteRender());
+        }
         if (found) {
             this.route.current = {
                 params,
