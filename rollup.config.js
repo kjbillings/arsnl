@@ -32,6 +32,7 @@ export default {
                     'omitBy',
                     'reject',
                     'remove',
+                    'noop',
                 ]
             }
         }),

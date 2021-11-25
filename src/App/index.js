@@ -2,6 +2,7 @@ import namespace from '../namespace'
 
 export const App = class App {
     constructor(config){
+        this.metadata = config.metadata || {}
         this.title = config.title || ''
         this.id = config.id
         this.component = config.component

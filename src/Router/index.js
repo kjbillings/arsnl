@@ -1,5 +1,5 @@
 import { match } from 'path-to-regexp'
-import { get, isNull, reject, isEmpty } from 'lodash'
+import { get, isNull, reject, isEmpty, noop } from 'lodash'
 
 import qs from './query-string'
 import { r } from '../Node'
@@ -27,11 +27,13 @@ export class Router {
                 component: this.get404(),
             },
         })
-        this.onBeforeRouteRender = options.onBeforeRouteRender
-        this.onAfterRouteRender = options.onAfterRouteRender
+        this.onInit = options.onInit || noop
+        this.onBeforeRouteRender = options.onBeforeRouteRender || noop
+        this.onAfterRouteRender = options.onAfterRouteRender || noop
         this.handleListeners()
         this.setRoute()
         this.subscribeToStateChanges()
+        this.onInit()
     }
     subscribeToStateChanges () {
         window.addEventListener("popstate", () => {
@@ -81,6 +83,8 @@ export class Router {
         waitForRender(() => this.onAfterRouteRender())
         if (found) {
             this.route.current = {
+                path,
+                parts: path.split('/'),
                 params,
                 component: this.routes[found],
             }

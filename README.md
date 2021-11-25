@@ -73,7 +73,7 @@ import { Node } from 'arsnl'
 
 export default (app) => (
     Node({
-        r: [
+        render: [
             `Hello world! App root is #${app.id}`,
             app.renderRoutes(),
         ]
@@ -116,7 +116,7 @@ Here's a minimal example of a component:
 ```javascript
 import { Node } from 'arsnl'
 
-export default () => Node({ r: "Hello world!" })
+export default () => Node({ render: "Hello world!" })
 ```
 
 Here's a complex example of a component:
@@ -135,11 +135,11 @@ export default () => {
         t: 'p',
         className: 'toggleable-background',
         s: { background: background.value },
-        r: [
+        render: [
             'Wutang ',
             Node({
                 t: 'strong',
-                r: 'FOREVER'
+                render: 'FOREVER'
             }),
         ],
         onLoad,
@@ -179,14 +179,14 @@ import { Node, State } from 'arsnl'
 export default () => {
     const counter = State({ value: 0 })    
     return Node({
-        r: [
+        render: [
             Node({
                 t: 'button',
                 onclick: () => counter.value++,
-                r: 'Add it up',
+                render: 'Add it up',
             }),
             Node(() => ({
-                r: `clicked ${counter.value} times`
+                render: `clicked ${counter.value} times`
             }), [ counter ])
         ],
     })
@@ -220,7 +220,7 @@ export default () => {
     const counter = State({ value: 0 })  
     const counterButton = Node({
         t: 'button',
-        r: 'Add it up',
+        render: 'Add it up',
         onclick: () => counter.value++,
     })
     subscribe(counter, (key, value) => {
@@ -256,7 +256,7 @@ export default () => {
     })  
     const counterButton = Node({
         t: 'button',
-        r: 'Add it up',
+        render: 'Add it up',
         onclick: () => counter.value++,
     })
     return counterButton
@@ -295,7 +295,7 @@ const routes = {
         // For example: if the url is www.example.com/sports/baseball?field="Wrigley"
         return (
             Node({
-                r: `hello ${search.field} Field! Someone likes ${params.sport}!`
+                render: `hello ${search.field} Field! Someone likes ${params.sport}!`
                 // So this route component would render:
                 // <div>hello Wrigley Field! Someone likes baseball!</div>
             })
@@ -307,14 +307,14 @@ const router = new Router(routes)
 
 export default () => (
     Node({
-        r: router.render()
+        render: router.render()
     })
 )
 ```
 
 (**Note:** The key names of the routes object may contain [path variables](https://www.npmjs.com/package/path-to-regexp).)
 
-(**Note:** Path variables and query params will be passed into the rendered route component.)
+(**Note:** Path variables and query params flow into the rendered route component.)
 
 ***
 # Link
@@ -335,7 +335,7 @@ import { Node, Router } from 'arsnl'
 export default () => (
     Link({
         path: '/sports/baseball',
-        r: 'Visit Baseball',
+        render: 'Visit Baseball',
     })
 )
 // this will render as: <a href="/sports/baseball">Visit Baseball</a>

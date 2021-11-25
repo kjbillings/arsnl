@@ -6,6 +6,7 @@ const namespace = '__ARSNL__';
 
 const App = class App {
     constructor(config){
+        this.metadata = config.metadata || {};
         this.title = config.title || '';
         this.id = config.id;
         this.component = config.component;
@@ -17143,6 +17144,7 @@ var lodash_14 = lodash.omit;
 var lodash_15 = lodash.omitBy;
 var lodash_16 = lodash.reject;
 var lodash_17 = lodash.remove;
+var lodash_18 = lodash.noop;
 
 class EventManager {
     constructor () {
@@ -17861,6 +17863,7 @@ var qs = {
 };
 
 const getApp = () => lodash_2(window, namespace);
+const getRouter = () => getApp().router;
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -17907,11 +17910,13 @@ class Router {
                 component: this.get404(),
             },
         });
-        this.onBeforeRouteRender = options.onBeforeRouteRender;
-        this.onAfterRouteRender = options.onAfterRouteRender;
+        this.onInit = options.onInit || lodash_18;
+        this.onBeforeRouteRender = options.onBeforeRouteRender || lodash_18;
+        this.onAfterRouteRender = options.onAfterRouteRender || lodash_18;
         this.handleListeners();
         this.setRoute();
         this.subscribeToStateChanges();
+        this.onInit();
     }
     subscribeToStateChanges () {
         window.addEventListener("popstate", () => {
@@ -17961,6 +17966,8 @@ class Router {
         waitForRender(() => this.onAfterRouteRender());
         if (found) {
             this.route.current = {
+                path,
+                parts: path.split('/'),
                 params,
                 component: this.routes[found],
             };
@@ -18196,6 +18203,8 @@ exports.figcaption = figcaption;
 exports.figure = figure;
 exports.footer = footer;
 exports.form = form;
+exports.getApp = getApp;
+exports.getRouter = getRouter;
 exports.h1 = h1;
 exports.h2 = h2;
 exports.h3 = h3;
