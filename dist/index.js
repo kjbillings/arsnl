@@ -17343,6 +17343,10 @@ var setRest = (el, config) => {
                 el[key] = value;
                 return
             }
+            if (value === null) {
+              el.removeAttribute(key);
+              return
+            }
             el.setAttribute(key, value);
         }
     });
@@ -17962,8 +17966,12 @@ class Router {
             found,
             params,
         } = this.findRoute(path);
-        this.onBeforeRouteRender();
-        waitForRender(() => this.onAfterRouteRender());
+        if (lodash_8(this.onBeforeRouteRender)) {
+          this.onBeforeRouteRender();
+        }
+        if (lodash_8(this.onAfterRouteRender)) {
+          waitForRender(() => this.onAfterRouteRender());
+        }
         if (found) {
             this.route.current = {
                 path,
@@ -18001,21 +18009,29 @@ const build = tag => (
     (configOrRender, configOrTrackers) => {
         if (isConfig(configOrRender)) {
             return r(() => {
-                const conf = resolveConfig(configOrRender);
-                return {
-                    ...conf,
+                const {disabled, ...rest} = resolveConfig(configOrRender);
+                const props = {
+                    ...rest,
                     tag
+                };
+                if (disabled === true) {
+                  props.disabled = true;
                 }
+                return props
             }, configOrTrackers)
         }
 
         if (isConfig(configOrTrackers)) {
-            const conf = resolveConfig(configOrTrackers);
-            return r({
-                ...conf,
+            const {disabled, ...rest} = resolveConfig(configOrTrackers);
+            const props = {
+                ...rest,
                 render: configOrRender,
                 tag
-            })
+            };
+            if (disabled === true) {
+              props.disabled = true;
+            }
+            return r(props)
         }
 
         return r({

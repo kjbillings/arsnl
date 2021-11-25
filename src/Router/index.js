@@ -1,5 +1,5 @@
 import { match } from 'path-to-regexp'
-import { get, isNull, reject, isEmpty, noop } from 'lodash'
+import { get, isNull, reject, isEmpty, noop, isFunction } from 'lodash'
 
 import qs from './query-string'
 import { r } from '../Node'
@@ -79,8 +79,12 @@ export class Router {
             found,
             params,
         } = this.findRoute(path)
-        this.onBeforeRouteRender()
-        waitForRender(() => this.onAfterRouteRender())
+        if (isFunction(this.onBeforeRouteRender)) {
+          this.onBeforeRouteRender()
+        }
+        if (isFunction(this.onAfterRouteRender)) {
+          waitForRender(() => this.onAfterRouteRender())
+        }
         if (found) {
             this.route.current = {
                 path,
