@@ -2,7 +2,7 @@ import { match } from 'path-to-regexp'
 import { get, isNull, reject, isEmpty, noop, isFunction } from 'lodash'
 
 import qs from './query-string'
-import { r } from '../Node'
+import { DomNode } from '../Node'
 import waitForRender from '../wait-for-render'
 import { getApp } from '../App/getters'
 import { State, subscribe } from '../State'
@@ -75,15 +75,12 @@ export class Router {
     }
     setRoute () {
         const path = window.location.pathname
-        const {
-            found,
-            params,
-        } = this.findRoute(path)
+        const { found, params } = this.findRoute(path)
         if (isFunction(this.onBeforeRouteRender)) {
-          this.onBeforeRouteRender()
+            this.onBeforeRouteRender()
         }
         if (isFunction(this.onAfterRouteRender)) {
-          waitForRender(() => this.onAfterRouteRender())
+            waitForRender(() => this.onAfterRouteRender())
         }
         if (found) {
             this.route.current = {
@@ -93,7 +90,12 @@ export class Router {
                 component: this.routes[found],
             }
         } else {
-            this.route.current = this.get404()
+            this.route.current = {
+                path,
+                parts: path.split('/'),
+                params,
+                component: this.get404(),
+            }
         }
     }
     setTitle (str) {
@@ -101,7 +103,7 @@ export class Router {
         document.title = title
     }
     render () {
-        return r(() => {
+        return DomNode(() => {
             if (!this.is.listening) {
                 this.is.listening = true
             }

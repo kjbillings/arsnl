@@ -1,7 +1,6 @@
 import { get, isFunction, isString, isNumber, isArray, isObject } from 'lodash'
 
-import { subscribe, State } from '../State'
-import arsnl_namespace from '../namespace'
+import { subscribe } from '../State'
 import isElement from './is-element'
 import isState from './is-state'
 

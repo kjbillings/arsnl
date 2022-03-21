@@ -1,10 +1,10 @@
 import { isString } from 'lodash'
 
-import { r } from '../Node'
+import { DomNode } from '../Node'
 import { navigate } from './navigate'
 
 export const Link = ({ path, tag='a', ...rest }) => (
-    r({
+    DomNode({
         ...rest,
         tag,
         href: path || rest.href,

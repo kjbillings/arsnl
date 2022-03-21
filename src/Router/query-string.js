@@ -1,13 +1,13 @@
-import qs from 'querystring'
+import querystring from 'querystring'
 
 import { omitBy, isUndefined } from 'lodash'
 
 export default {
     parse: (search) => {
         search = search.replace(/^\?/, '')
-        return qs.parse(search)
+        return querystring.parse(search)
     },
     stringify: obj => {
-        return qs.stringify(omitBy(obj, isUndefined))
+        return querystring.stringify(omitBy(obj, isUndefined))
     }
 }

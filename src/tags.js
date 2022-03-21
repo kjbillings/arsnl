@@ -1,10 +1,10 @@
 import { isString } from 'lodash'
-import { r, isConfig, resolveConfig } from './Node'
+import { DomNode, isConfig, resolveConfig } from './Node'
 
 const build = tag => (
     (configOrRender, configOrTrackers) => {
         if (isConfig(configOrRender)) {
-            return r(() => {
+            return DomNode(() => {
                 const {disabled, ...rest} = resolveConfig(configOrRender)
                 const props = {
                     ...rest,
@@ -27,10 +27,10 @@ const build = tag => (
             if (disabled === true) {
               props.disabled = true
             }
-            return r(props)
+            return DomNode(props)
         }
 
-        return r({
+        return DomNode({
             render: configOrRender,
             tag
         })

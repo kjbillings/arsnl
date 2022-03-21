@@ -3,6 +3,7 @@ import { remove } from 'lodash'
 export default class EventManager {
     constructor () {
         this.listeners = []
+        this.changeCount = 0
     }
     addListener (fn) {
         this.listeners.push(fn)
@@ -13,6 +14,7 @@ export default class EventManager {
     onChange (key, value) {
         this.listeners.forEach(fn => {
             fn(key, value)
+            this.changeCount = this.changeCount + 1
         })
     }
 }

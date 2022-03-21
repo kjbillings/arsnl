@@ -11,11 +11,14 @@
       "devDependencies": {
             "@rollup/plugin-node-resolve": "^7.1.1",
             "eslint": "^7.21.0",
+            "lodash": "^4.17.15",
+            "path-to-regexp": "^6.1.0",
+            "querystring": "^0.2.0",
             "rollup": "^2.0.6",
             "rollup-plugin-commonjs": "^10.1.0",
             "rollup-plugin-node-builtins": "^2.1.2"
       },
-      "dependencies": {
+      "peerDependencies": {
             "lodash": "^4.17.15",
             "path-to-regexp": "^6.1.0",
             "querystring": "^0.2.0"

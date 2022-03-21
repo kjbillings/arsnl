@@ -42,12 +42,13 @@ const handleOnLoad = (el, config) => {
 const watchStates = (el, config, states) => {
     states.forEach((state) => {
         subscribe(state, () => {
-            el = render(el, resolveConfig(config))
+            const resolvedConfig = resolveConfig(config)
+            el = render(el, resolvedConfig)
         })
     })
 }
 
-export const r = (config={}, states=[]) => {
+export const DomNode = (config={}, states=[]) => {
     const el = getNode(config)
     handleOnLoad(el, config)
     watchStates(el, config, states)
