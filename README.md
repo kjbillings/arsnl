@@ -48,8 +48,9 @@ import AppRoutes from './routes'
 
 new App({
     id: 'app-root',
-    routes: AppRoutes,
-    component: AppComponent,
+    title: APP_TITLE,
+    component,
+    router: new Router(routes, {}),
 })
 ```
 
@@ -61,6 +62,7 @@ import Profile from './Profile'
 const routes = {
     "/": Dashboard,
     "/profile/:id": Profile,
+    "/404": ({ redirect }) => redirect('/'),
 }
 
 export default routes
@@ -68,16 +70,17 @@ export default routes
 
 Example `AppComponent.js`:
 ```javascript
-import { Node } from 'arsnl'
+import { div } from 'arsnl'
 
-export default (app) => (
-    Node({
-        render: [
-            `Hello world! App root is #${app.id}`,
-            app.renderRoutes(),
-        ]
-    })
-)
+export default app => {
+    return (
+        div({
+            render: [
+                app.renderRoutes(),
+            ],
+        })
+    )
+}
 ```
 And just like that, you've set up an ARSNL app!
 
