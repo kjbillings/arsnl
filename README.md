@@ -43,13 +43,13 @@ Example `index.html`:
 Example `index.js`:
 ```javascript
 import { App } from 'arsnl'
-import AppComponent from './AppComponent'
-import AppRoutes from './routes'
+import AppComponent from './App'
+import routes from './routes'
 
 new App({
     id: 'app-root',
     title: APP_TITLE,
-    component,
+    component: AppComponent,
     router: new Router(routes, {}),
 })
 ```
