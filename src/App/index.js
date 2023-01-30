@@ -1,14 +1,28 @@
+import { Router } from '../Router'
 import namespace from '../namespace'
 
 export const App = class App {
-    constructor(config){
-        this.metadata = config.metadata || {}
-        this.title = config.title || ''
-        this.id = config.id
-        this.component = config.component
-        this.router = config.router || console.error('ARSNL Error: router not found!')
+    constructor({
+        metadata,
+        title,
+        id,
+        component,
+        routes,
+        onInit,
+        onBeforeRouteRender,
+        onAfterRouteRender,
+    }) {
+        this.metadata = metadata || {}
+        this.title = title || ''
+        this.id = id
+        this.component = component
+        this.router = new Router(routes, {
+            onInit: onInit,
+            onBeforeRouteRender: onBeforeRouteRender,
+            onAfterRouteRender: onAfterRouteRender,
+        })
         this.globalize()
-        this.renderApp()
+        this.injectApp()
     }
     globalize () {
         window[namespace] = this
@@ -16,7 +30,7 @@ export const App = class App {
     getRootElement() {
         return document.getElementById(this.id)
     }
-    renderApp () {
+    injectApp () {
         this.getRootElement()
             .append(this.component(this))
     }

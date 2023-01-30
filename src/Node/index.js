@@ -1,4 +1,4 @@
-import { isFunction } from 'lodash'
+import { isEmpty, isFunction } from 'lodash'
 
 import { subscribe } from '../State'
 import createElement from './create-element'
@@ -11,9 +11,9 @@ export { default as isDomNode } from './is-dom-node'
 export { default as isConfig } from './is-config'
 export { default as waitForRender } from '../wait-for-render'
 
-export const resolveConfig = (config) => (
+export const resolveConfig = (config, state, field, value) => (
     isFunction(config)
-        ? config()
+        ? config(state, field, value)
         : config
 )
 
@@ -24,33 +24,26 @@ const render = (el, config) => {
     return el
 }
 
-const getNode = (config) => {
+export const DomNode = (config={}, states=[], fields=[]) => {
     const resolvedConfig = resolveConfig(config)
-    const el = createElement(resolvedConfig)
-    return render(el, resolvedConfig)
-}
 
-const handleOnLoad = (el, config) => {
-    const resolvedConfig = resolveConfig(config)
+    const el = createElement(resolvedConfig) 
+    let renderedElement = render(el, resolvedConfig)
+    
     if (isFunction(resolvedConfig.onLoad)) {
         waitForRender(() => {
-            resolvedConfig.onLoad(el)
+            resolvedConfig.onLoad(renderedElement)
         })
     }
-}
-
-const watchStates = (el, config, states) => {
+    
     states.forEach((state) => {
-        subscribe(state, () => {
-            const resolvedConfig = resolveConfig(config)
-            el = render(el, resolvedConfig)
-        })
+        subscribe(state, (field, value) => {
+            if (isEmpty(fields) || fields.includes(field)) {
+                const resolvedConfig = resolveConfig(config, state, field, value)
+                renderedElement = render(renderedElement, resolvedConfig)
+            }
+        }, fields)
     })
-}
 
-export const DomNode = (config={}, states=[]) => {
-    const el = getNode(config)
-    handleOnLoad(el, config)
-    watchStates(el, config, states)
-    return el
+    return renderedElement
 }

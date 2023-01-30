@@ -1,32 +1,31 @@
 import { isString } from 'lodash'
 import { DomNode, isConfig, resolveConfig } from './Node'
 
+const processProps = (tag, config, render) => {
+    const { disabled, checked, ...rest } = resolveConfig(config, render)
+    const props = { ...rest, tag }
+    if (render) {
+        props.render = render
+    }
+    if (disabled === true) {
+        props.disabled = true
+    }
+    if (checked === true) {
+        props.checked = true
+    }
+    return props
+}
+
 const build = tag => (
-    (configOrRender, configOrTrackers) => {
+    (configOrRender, configOrTrackers, fields) => {
         if (isConfig(configOrRender)) {
             return DomNode(() => {
-                const {disabled, ...rest} = resolveConfig(configOrRender)
-                const props = {
-                    ...rest,
-                    tag
-                }
-                if (disabled === true) {
-                  props.disabled = true
-                }
-                return props
-            }, configOrTrackers)
+                return processProps(tag, configOrRender)
+            }, configOrTrackers, fields)
         }
 
         if (isConfig(configOrTrackers)) {
-            const {disabled, ...rest} = resolveConfig(configOrTrackers)
-            const props = {
-                ...rest,
-                render: configOrRender,
-                tag
-            }
-            if (disabled === true) {
-              props.disabled = true
-            }
+            const props = processProps(tag, configOrTrackers, configOrRender)
             return DomNode(props)
         }
 
@@ -36,6 +35,7 @@ const build = tag => (
         })
     }
 )
+
 export const a =           build('a')
 export const abbr =        build('abbr')
 export const address =     build('address')

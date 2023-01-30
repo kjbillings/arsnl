@@ -22,16 +22,12 @@ export class Router {
         this.routes = routes || {}
         this.className = `arsnl-router-${generateId()}`
         this.route = State({
-            current: {
-                params: {},
-                component: this.get404(),
-            },
+            current: this.getRouteByLocation(),
         })
         this.onInit = options.onInit || noop
         this.onBeforeRouteRender = options.onBeforeRouteRender || noop
         this.onAfterRouteRender = options.onAfterRouteRender || noop
         this.handleListeners()
-        this.setRoute()
         this.subscribeToStateChanges()
         this.onInit()
     }
@@ -73,30 +69,33 @@ export class Router {
     get404 () {
         return get(this.routes, PAGE_NOT_FOUND, EmptyRoute)
     }
-    setRoute () {
+    getRouteByLocation () {
         const path = window.location.pathname
         const { found, params } = this.findRoute(path)
-        if (isFunction(this.onBeforeRouteRender)) {
-            this.onBeforeRouteRender()
-        }
-        if (isFunction(this.onAfterRouteRender)) {
-            waitForRender(() => this.onAfterRouteRender())
-        }
         if (found) {
-            this.route.current = {
+            return {
                 path,
                 parts: path.split('/'),
                 params,
                 component: this.routes[found],
             }
         } else {
-            this.route.current = {
+            return {
                 path,
                 parts: path.split('/'),
                 params,
                 component: this.get404(),
             }
         }
+    }
+    setRoute () {
+        if (isFunction(this.onBeforeRouteRender)) {
+            this.onBeforeRouteRender()
+        }
+        if (isFunction(this.onAfterRouteRender)) {
+            waitForRender(() => this.onAfterRouteRender())
+        }
+        this.route.current = this.getRouteByLocation()
     }
     setTitle (str) {
         const title = reject([getApp().title, str], isEmpty).join(' | ')
@@ -107,14 +106,15 @@ export class Router {
             if (!this.is.listening) {
                 this.is.listening = true
             }
+            const props = {
+                setTitle: str => this.setTitle(str),
+                params: this.route.current.params,
+                search: qs.parse(window.location.search),
+                redirect: getRedirectHandler(routerEvents),
+            }
             return {
                 class: this.className,
-                render: this.route.current.component({
-                    setTitle: str => this.setTitle(str),
-                    params: this.route.current.params,
-                    search: qs.parse(window.location.search),
-                    redirect: getRedirectHandler(routerEvents),
-                }),
+                render: this.route.current.component(props),
             }
         }, [ this.route ])
     }

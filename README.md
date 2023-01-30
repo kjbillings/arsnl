@@ -9,25 +9,10 @@ The simplest framework for powerful javascript apps
     - extract
 - Router
     - Link
-
-***
-# App
-```
-App(object)
-```
-
-This function provides a method of attaching your app component to the root html element with the given `id`.
-
-#### Only Argument:
-
-| Key           | Description                                      | Type  |
-| :-----------: |:------------------------------------------------:| :------:|
-| **id**        | ID to look for in the document as a root element | string |
-| **routes**    | Configures the App level Router                  | Routes Object (see below)  |
-| **component** | The Node to be injected into the html            | object |
+- All html tag functions
 
 ...
-#### Usage:
+**Usage:**
 
 Example `index.html`:
 ```javascript
@@ -48,7 +33,7 @@ import routes from './routes'
 
 new App({
     id: 'app-root',
-    title: APP_TITLE,
+    title: "My App",
     component: AppComponent,
     router: new Router(routes, {}),
 })
@@ -84,69 +69,79 @@ export default app => {
 ```
 And just like that, you've set up an ARSNL app!
 
-**Note:** In order to render the routes provided to the app, you may call the Router's render method attached to the app provided to the top-level app component. If you don't want to use a Router at the top level of your app, you don't have to provide a configuration for it when constructing your app, and you don't have to render routes as we did in this example.
+**Note:** In order to render the routes provided to the app, you may call the Router's render method attached to the app provided to the top-level app component.
 
 ***
-# Node
-```
-Node(object | function, array)
+# App
+```js
+App({})
 ```
 
+This function provides a method of attaching your app component to the root html element with the given `id`.
+
+#### Only Argument:
+
+| Key           | Description                                      | Type  |
+| :-----------: |:------------------------------------------------:| :------:|
+| **id**        | ID selector to look for in the document as a root element | string |
+| **routes**    | Configures the App level Router                  | Routes Object (see below)  |
+| **component** | The ARSNL Component to be injected into the html            | object |
+
+***
+# DomNode
 This function builds a basic ARSNL component. Really it's just a wrapper around code that generates a vanilla DOM element and knows how to decorate it based on what you've provided.
 
-#### First Argument:
-**Required:** The first argument is an object of attributes describing the Node OR it's a function that returns said configuration.
+```js
+Domdiv(object | function, array of State objects to watch)
+```
+**First Argument (required):**
+The first argument is an object of attributes describing the Node OR it's a function that returns said configuration.
 
 | Key        | Required | Description                                      | Value Type  |
 | :----------: |:--------:|:--------------------------------------------:|:------:|
-| **t**      | No       | Shortname for 'tagName' (defaults to 'div')  | String |
-| **r**      | Yes      | Render                                       | Node, string, number, Array of Nodes/strings/numbers, ARSNL State (if only one property is present, it will attempt to render its value) |
-| **s**      | No       | object of css properties                     | object |
+| **tagName**      | No       | dom element (div by default) | String |
+| **render**      | Yes       | DomNode, string, number, Array of DomNodes/strings/numbers, ARSNL State (if only one property is present, it will attempt to render its value) |
+| **style**      | No       | object of css properties (recommend using some css-in-js solution instead... See Jetpak-css)                    | object |
 | **onLoad** | No       | fires during tick after node has rendered    | function  |
 
-Config Object also will take any [properties supported by standard JS DOM Nodes](https://www.w3schools.com/jsref/dom_obj_all.asp).
+Config Object also will take any [properties supported by standard JS DOM Elements](https://www.w3schools.com/jsref/dom_obj_all.asp).
 
 ...
 
-#### Second Argument:
-**Optional:** The second argument is an array of ARSNL State objects. Whenever a property is updated on one of the state objects, the node will re-render itself. (Note: Using the second argument requires the first one to be a **function** that returns the config.)
+**Second Argument (optional):** 
 
-...
-#### Usage:
+The second argument is an array of ARSNL State objects. Whenever a property is updated on one of the state objects, the node will re-render itself. (Note: Using the second argument requires the first one to be a **function** that returns the config.)
 
-Here's a minimal example of a component:
-```javascript
-import { Node } from 'arsnl'
+**Minimal usage example:**
+```js
+import { div } from 'arsnl'
 
-export default () => Node({ render: "Hello world!" })
+export default () => div({ render: "Hello world!" })
 ```
 
-Here's a complex example of a component:
-```javascript
-import { Node, State } from 'arsnl'
+**Minimal usage example:**
+```js
+import { div, State } from 'arsnl'
 
 export default () => {
-    const background = State({ value: 'none' })
-    const onLoad = () => alert('component has loaded')
-    const onclick = () => {
-        (background.value === 'blue')
-            ? background.value = 'red'
-            : background.value = 'blue'
-    }
-    return Node(() => ({
+    const statefulStyle = State({ background: 'none' })
+    return div(() => ({
         t: 'p',
         className: 'toggleable-background',
-        s: { background: background.value },
+        s: { background: statefulStyle.background },
         render: [
             'Wutang ',
-            Node({
+            div({
                 t: 'strong',
                 render: 'FOREVER'
             }),
         ],
-        onLoad,
-        onclick,
-    }), [ background ])
+        onLoad: () => alert('component has loaded'),
+        onclick: () => {
+            (statefulStyle.background === 'blue')
+                ? statefulStyle.background = 'red'
+                : statefulStyle.background = 'blue',
+    }), [ statefulStyle ])
 }
 ```
 (**Note:** This component will re-render when the background is changed by clicking the component because it's tracking the state of 'background' in it's array of tracked states.)
@@ -155,39 +150,41 @@ export default () => {
 
 ***
 # State
+State() allows you to enhance an object with proxy so subscribers can listen for changes.
+```js
+State(obj, onChange)
 ```
-State(object, function)
-```
 
-This function allows you to enhance an object with proxy so subscribers can listen for changes.
 
-#### First Argument:
-**Required:** Object of data for which you want to track changes on.
+**First Argument (required):**
 
-#### Second Argument:
-**Optional:** Function you want to fire every time state changes. (This onChange is the first subscriber to changes added. You can use the subscribe() function to add additional listeners.)
+Object of default values.
+
+**Second Argument (optional):**
+
+Function you want to fire every time state changes. (This onChange is the first subscriber to changes added. You can use the subscribe() function to add additional listeners.)
 
 (**Note:** This onChange function will receive two arguments: 'name' of changed field, and the updated 'value' of changed field respectively.)
 
 (**Note:** In order to trigger an update to occur, you must set the entire top-level property on the state object.)
 
 ...
-#### Usage:
+**Usage:**
 
 An example of user being able to update state:
-```javascript
-import { Node, State } from 'arsnl'
+```js
+import { div, State } from 'arsnl'
 
 export default () => {
     const counter = State({ value: 0 })    
-    return Node({
+    return div({
         render: [
-            Node({
+            div({
                 t: 'button',
                 onclick: () => counter.value++,
                 render: 'Add it up',
             }),
-            Node(() => ({
+            div(() => ({
                 render: `clicked ${counter.value} times`
             }), [ counter ])
         ],
@@ -198,29 +195,29 @@ export default () => {
 
 ***
 # subscribe
-```
+```js
 subscribe(State, function)
 ```
 
 This function adds an onChange listener to a given State object.
 
-#### First Argument:
-**Required:** A reference to an ARSNL State Object.
+**First Argument (required):**
+A reference to an ARSNL State Object.
 
-#### Second Argument:
-**Required:** A method to call whenever state changes.
+**Second Argument (required):**
+A method to call whenever state changes.
 
 (**Note:** This onChange function will receive two arguments: 'name' of changed field, and the updated 'value' of changed field, respectively.)
 
 ...
-#### Usage:
+**Usage:**
 
-```javascript
-import { Node, State, subscribe } from 'arsnl'
+```js
+import { div, State, subscribe } from 'arsnl'
 
 export default () => {
     const counter = State({ value: 0 })  
-    const counterButton = Node({
+    const counterButton = div({
         t: 'button',
         render: 'Add it up',
         onclick: () => counter.value++,
@@ -234,7 +231,7 @@ export default () => {
 
 ***
 # extract
-```
+```js
 extract(State)
 ```
 
@@ -246,23 +243,16 @@ This function sanitizes the ARSNL State object by removing the ARSNL-specific me
 This example is a button that auto-saves a counter State on every change using some imaginary post API call.
 
 ...
-#### Usage:
+**Usage:**
 
-```javascript
-import { Node, State, extract } from 'arsnl'
-import { autoSaveCounterState } from 'some-api-helper'
+```js
+import { div, State, extract } from 'arsnl'
 
-export default () => {
-    const counter = State({ value: 0 }, () => {
-        autoSaveCounterState(extract(counter))
-    })  
-    const counterButton = Node({
-        t: 'button',
-        render: 'Add it up',
-        onclick: () => counter.value++,
-    })
-    return counterButton
-}
+const counter = State({ value: 0 })
+const data = extract(counter)
+// counter would be {"value": 0, __ARSNL_STATE__: {...}}
+// data would be {"value": 0}
+
 ```
 
 ***
@@ -282,10 +272,10 @@ THIS ONLY LISTENS to location changes made using the ARSNL Link component - see 
 **Required:** A configuration object representing the routes you wish to render. Key names on the object are strings representing the url of the given page, and the values are functions representing something that will be rendered based on the current url.
 
 ...
-#### Usage:
+**Usage:**
 
-```javascript
-import { Node, Router } from 'arsnl'
+```js
+import { div, Router } from 'arsnl'
 
 import Home from './routes/Home'
 import Work from './routes/Work'
@@ -296,7 +286,7 @@ const routes = {
     "/sports/:sport": ({ params, search }) => {
         // For example: if the url is www.example.com/sports/baseball?field="Wrigley"
         return (
-            Node({
+            div({
                 render: `hello ${search.field} Field! Someone likes ${params.sport}!`
                 // So this route component would render:
                 // <div>hello Wrigley Field! Someone likes baseball!</div>
@@ -308,7 +298,7 @@ const routes = {
 const router = new Router(routes)
 
 export default () => (
-    Node({
+    div({
         render: router.render()
     })
 )
@@ -320,7 +310,7 @@ export default () => (
 
 ***
 # Link
-```
+```js
 Link(object)
 ```
 This function builds a link component that ties into the navigation provided by ARSNL Router (see above).
@@ -329,10 +319,10 @@ This function builds a link component that ties into the navigation provided by 
 **Required:** Object of ARSNL Node configuration with a special "path" property.
 
 ...
-#### Usage:
+**Usage:**
 
-```javascript
-import { Node, Router } from 'arsnl'
+```js
+import { div, Router } from 'arsnl'
 
 export default () => (
     Link({

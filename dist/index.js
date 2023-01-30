@@ -4,299 +4,6 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var lodash = require('lodash');
 
-const namespace = '__ARSNL__';
-
-const App = class App {
-    constructor(config){
-        this.metadata = config.metadata || {};
-        this.title = config.title || '';
-        this.id = config.id;
-        this.component = config.component;
-        this.router = config.router || console.error('ARSNL Error: router not found!');
-        this.globalize();
-        this.renderApp();
-    }
-    globalize () {
-        window[namespace] = this;
-    }
-    getRootElement() {
-        return document.getElementById(this.id)
-    }
-    renderApp () {
-        this.getRootElement()
-            .append(this.component(this));
-    }
-    renderRoutes () {
-        return this.router.render()
-    }
-};
-
-class EventManager {
-    constructor () {
-        this.listeners = [];
-        this.changeCount = 0;
-    }
-    addListener (fn) {
-        this.listeners.push(fn);
-    }
-    removeListener (fn) {
-        lodash.remove(this.listeners, (listener) => listener === fn);
-    }
-    onChange (key, value) {
-        this.listeners.forEach(fn => {
-            fn(key, value);
-            this.changeCount = this.changeCount + 1;
-        });
-    }
-}
-
-const subscribe = (state, fn) => (
-    state[namespace].addListener(fn)
-);
-
-var createProxy = (object, onChange) => {
-    if (lodash.isFunction(onChange)) {
-        subscribe(object, onChange);
-    }
-    return (
-        new Proxy(object, {
-            set: (target, key, value) => {
-                if (target[key] !== value) {
-                    target[key] = value;
-                    object[namespace].onChange(key, value);
-                }
-                return true
-            },
-        })
-    )
-};
-
-const extract = (state) => (
-    lodash.omit(state, [namespace])
-);
-
-const State = (object={}, onChange) => {
-    object[namespace] = new EventManager();
-    return createProxy(object, onChange)
-};
-
-const xmlns = "http://www.w3.org/2000/svg";
-
-var createElement = config => {
-    let tag = config.tag;
-
-    if (!lodash.isObject(config)) {
-        return document.createDocumentFragment()
-    }
-    if (lodash.isString(tag)) {
-        tag = tag.toLowerCase();
-        if (tag === 'comment') {
-            return document.createComment(config.render || '')
-        }
-        if (tag.includes('svg')) {
-            return document.createElementNS(xmlns, tag.replace('svg:', ''))
-        }
-    }
-    return document.createElement(tag || 'div')
-};
-
-var isDomNode = obj => obj.nodeType === 1;
-
-var isElement = obj => {
-    try {
-        const isHtml = obj instanceof HTMLElement;
-        const isComment = obj instanceof Comment;
-        const isSvg = obj instanceof SVGElement;
-        return isSvg || isHtml || isComment
-    }
-    catch(e){
-        return lodash.isObject(obj)
-            && isDomNode(obj)
-            && lodash.isObject(obj.style)
-            && lodash.isObject(obj.ownerDocument)
-    }
-};
-
-var isState = (obj={}) => lodash.isObject(obj[namespace]);
-
-const append = (target, appendage) => {
-    if (lodash.isFunction(target.append)) {
-        target.append(appendage);
-    }
-};
-
-const renderArray = (el, contents) => {
-    for (var i = 0; i < contents.length; i++) {
-        render(el, contents[i]);
-    }
-};
-
-const renderStateObject = (el, contents) => {
-    const firstProperty = Object.keys(contents)[0];
-    let child = document.createTextNode(lodash.get(contents, firstProperty, ''));
-    subscribe(contents, (key, value) => {
-        child.replaceData(0, child.length, value);
-    });
-    el.append(child);
-};
-
-const renderString = (el, contents) => {
-    const child = document.createTextNode(contents);
-    append(el, child);
-};
-
-const render = (el, contents) => {
-    if (contents instanceof SVGElement) {
-        return el.appendChild(contents)
-    }
-    if (isElement(contents)) {
-        return append(el, contents)
-    }
-    if (lodash.isArray(contents)) {
-        return renderArray(el, contents)
-    }
-    if (lodash.isObject(contents) && isState(contents)){
-        return renderStateObject(el, contents)
-    }
-    if (lodash.isNumber(contents) || lodash.isString(contents)) {
-        return renderString(el, contents)
-    }
-};
-
-const setContents = (el, config) => {
-    if (config.dangerouslySetInnerHtml || config.dangerouslySetInnerHTML) {
-        el.innerHTML = config.dangerouslySetInnerHtml || config.dangerouslySetInnerHTML;
-    } else {
-        const contents = config.render || '';
-        el.innerHTML = '';
-        render(el, contents);
-    }
-};
-
-var waitForRender = (fn, w=10) => setTimeout(fn, w);
-
-var setStyle = (el, config) => {
-    const style = config.style;
-
-    const setProperty = (key, value) => {
-        waitForRender(() => {
-            if (key !== namespace) {
-                el.style[key] = value;
-            }
-        });
-    };
-
-    if (lodash.isObject(style)) {
-        if (isState(style)) {
-            subscribe(style, (key, value) => {
-                setProperty(key, value);
-            });
-        }
-        Object.keys(style).forEach((key) => {
-            setProperty(key, style[key]);
-        });
-    }
-};
-
-const INTERNAL_ATTRIBUTES = [
-    namespace,
-    'style',
-    'tag',
-    'render',
-    'onLoad',
-    'dangerouslysetinnerhtml',
-    'dangerouslySetInnerHtml',
-    'dangerouslySetInnerHTML',
-];
-
-const isSameFn = (a, b) => (
-    lodash.isFunction(a)
-    && lodash.isFunction(b)
-    && a.toString() === b.toString()
-);
-
-var setRest = (el, config) => {
-    lodash.forEach(config, (value, key) => {
-        if (!lodash.includes(INTERNAL_ATTRIBUTES, key)) {
-            const lcKey = key.toLowerCase();
-            if (isSameFn(el[key], value) || isSameFn(el[lcKey], value)) {
-                return
-            }
-            if (el[lcKey] === null) {
-                el[lcKey] = value;
-                return
-            }
-            if (el[key] === null) {
-                el[key] = value;
-                return
-            }
-            if (value === null) {
-              el.removeAttribute(key);
-              return
-            }
-            el.setAttribute(key, value);
-        }
-    });
-};
-
-const isConfig = args => (
-    (
-        !lodash.isUndefined(args)
-        && !lodash.isNull(args)
-        && !lodash.isString(args)
-        && lodash.isObject(args)
-        && !lodash.isArray(args)
-        && !isDomNode(args)
-    ) || (
-        lodash.isFunction(args)
-        && isConfig(args())
-    )
-);
-
-const resolveConfig = (config) => (
-    lodash.isFunction(config)
-        ? config()
-        : config
-);
-
-const render$1 = (el, config) => {
-    setRest(el, config);
-    setContents(el, config);
-    setStyle(el, config);
-    return el
-};
-
-const getNode = (config) => {
-    const resolvedConfig = resolveConfig(config);
-    const el = createElement(resolvedConfig);
-    return render$1(el, resolvedConfig)
-};
-
-const handleOnLoad = (el, config) => {
-    const resolvedConfig = resolveConfig(config);
-    if (lodash.isFunction(resolvedConfig.onLoad)) {
-        waitForRender(() => {
-            resolvedConfig.onLoad(el);
-        });
-    }
-};
-
-const watchStates = (el, config, states) => {
-    states.forEach((state) => {
-        subscribe(state, () => {
-            const resolvedConfig = resolveConfig(config);
-            el = render$1(el, resolvedConfig);
-        });
-    });
-};
-
-const DomNode = (config={}, states=[]) => {
-    const el = getNode(config);
-    handleOnLoad(el, config);
-    watchStates(el, config, states);
-    return el
-};
-
 /**
  * Tokenize input string.
  */
@@ -785,6 +492,267 @@ var qs = {
     }
 };
 
+class EventManager {
+    constructor () {
+        this.listeners = [];
+        this.changeCount = 0;
+    }
+    addListener (fn) {
+        this.listeners.push(fn);
+    }
+    removeListener (fn) {
+        lodash.remove(this.listeners, (listener) => listener === fn);
+    }
+    onChange (key, value) {
+        this.listeners.forEach(fn => {
+            fn(key, value);
+            this.changeCount = this.changeCount + 1;
+        });
+    }
+}
+
+const namespace = '__ARSNL__';
+
+const subscribe = (state, fn) => (
+    state[namespace].addListener(fn)
+);
+
+var createProxy = (object, onChange) => {
+    if (lodash.isFunction(onChange)) {
+        subscribe(object, onChange);
+    }
+    return (
+        new Proxy(object, {
+            set: (target, key, value) => {
+                if (target[key] !== value) {
+                    target[key] = value;
+                    object[namespace].onChange(key, value);
+                }
+                return true
+            },
+        })
+    )
+};
+
+const extract = (state) => (
+    lodash.omit(state, [namespace])
+);
+
+const State = (object={}, onChange) => {
+    object[namespace] = new EventManager();
+    return createProxy(object, onChange)
+};
+
+const xmlns = "http://www.w3.org/2000/svg";
+
+var createElement = config => {
+    let tag = config.tag;
+
+    if (!lodash.isObject(config)) {
+        return document.createDocumentFragment()
+    }
+    if (lodash.isString(tag)) {
+        tag = tag.toLowerCase();
+        if (tag === 'comment') {
+            return document.createComment(config.render || '')
+        }
+        if (tag.includes('svg')) {
+            return document.createElementNS(xmlns, tag.replace('svg:', ''))
+        }
+    }
+    return document.createElement(tag || 'div')
+};
+
+var isDomNode = obj => obj.nodeType === 1;
+
+var isElement = obj => {
+    try {
+        const isHtml = obj instanceof HTMLElement;
+        const isComment = obj instanceof Comment;
+        const isSvg = obj instanceof SVGElement;
+        return isSvg || isHtml || isComment
+    }
+    catch(e){
+        return lodash.isObject(obj)
+            && isDomNode(obj)
+            && lodash.isObject(obj.style)
+            && lodash.isObject(obj.ownerDocument)
+    }
+};
+
+var isState = (obj={}) => lodash.isObject(obj[namespace]);
+
+const append = (target, appendage) => {
+    if (lodash.isFunction(target.append)) {
+        target.append(appendage);
+    }
+};
+
+const renderArray = (el, contents) => {
+    for (var i = 0; i < contents.length; i++) {
+        render(el, contents[i]);
+    }
+};
+
+const renderStateObject = (el, contents) => {
+    const firstProperty = Object.keys(contents)[0];
+    let child = document.createTextNode(lodash.get(contents, firstProperty, ''));
+    subscribe(contents, (key, value) => {
+        child.replaceData(0, child.length, value);
+    });
+    el.append(child);
+};
+
+const renderString = (el, contents) => {
+    const child = document.createTextNode(contents);
+    append(el, child);
+};
+
+const render = (el, contents) => {
+    if (contents instanceof SVGElement) {
+        return el.appendChild(contents)
+    }
+    if (isElement(contents)) {
+        return append(el, contents)
+    }
+    if (lodash.isArray(contents)) {
+        return renderArray(el, contents)
+    }
+    if (lodash.isObject(contents) && isState(contents)){
+        return renderStateObject(el, contents)
+    }
+    if (lodash.isNumber(contents) || lodash.isString(contents)) {
+        return renderString(el, contents)
+    }
+};
+
+const setContents = (el, config) => {
+    if (config.dangerouslySetInnerHtml || config.dangerouslySetInnerHTML) {
+        el.innerHTML = config.dangerouslySetInnerHtml || config.dangerouslySetInnerHTML;
+    } else {
+        const contents = config.render || '';
+        el.innerHTML = '';
+        render(el, contents);
+    }
+};
+
+var waitForRender = (fn, w=10) => setTimeout(fn, w);
+
+var setStyle = (el, config) => {
+    const style = config.style;
+
+    const setProperty = (key, value) => {
+        waitForRender(() => {
+            if (key !== namespace) {
+                el.style[key] = value;
+            }
+        });
+    };
+
+    if (lodash.isObject(style)) {
+        if (isState(style)) {
+            subscribe(style, (key, value) => {
+                setProperty(key, value);
+            });
+        }
+        Object.keys(style).forEach((key) => {
+            setProperty(key, style[key]);
+        });
+    }
+};
+
+const INTERNAL_ATTRIBUTES = [
+    namespace,
+    'style',
+    'tag',
+    'render',
+    'onLoad',
+    'dangerouslysetinnerhtml',
+    'dangerouslySetInnerHtml',
+    'dangerouslySetInnerHTML',
+];
+
+const isSameFn = (a, b) => (
+    lodash.isFunction(a)
+    && lodash.isFunction(b)
+    && a.toString() === b.toString()
+);
+
+var setRest = (el, config) => {
+    lodash.forEach(config, (value, key) => {
+        if (!lodash.includes(INTERNAL_ATTRIBUTES, key)) {
+            const lcKey = key.toLowerCase();
+            if (isSameFn(el[key], value) || isSameFn(el[lcKey], value)) {
+                return
+            }
+            if (el[lcKey] === null) {
+                el[lcKey] = value;
+                return
+            }
+            if (el[key] === null) {
+                el[key] = value;
+                return
+            }
+            if (value === null) {
+              el.removeAttribute(key);
+              return
+            }
+            el.setAttribute(key, value);
+        }
+    });
+};
+
+const isConfig = args => (
+    (
+        !lodash.isUndefined(args)
+        && !lodash.isNull(args)
+        && !lodash.isString(args)
+        && lodash.isObject(args)
+        && !lodash.isArray(args)
+        && !isDomNode(args)
+    ) || (
+        lodash.isFunction(args)
+        && isConfig(args())
+    )
+);
+
+const resolveConfig = (config, state, field, value) => (
+    lodash.isFunction(config)
+        ? config(state, field, value)
+        : config
+);
+
+const render$1 = (el, config) => {
+    setRest(el, config);
+    setContents(el, config);
+    setStyle(el, config);
+    return el
+};
+
+const DomNode = (config={}, states=[], fields=[]) => {
+    const resolvedConfig = resolveConfig(config);
+
+    const el = createElement(resolvedConfig); 
+    let renderedElement = render$1(el, resolvedConfig);
+    
+    if (lodash.isFunction(resolvedConfig.onLoad)) {
+        waitForRender(() => {
+            resolvedConfig.onLoad(renderedElement);
+        });
+    }
+    
+    states.forEach((state) => {
+        subscribe(state, (field, value) => {
+            if (lodash.isEmpty(fields) || fields.includes(field)) {
+                const resolvedConfig = resolveConfig(config, state, field, value);
+                renderedElement = render$1(renderedElement, resolvedConfig);
+            }
+        });
+    });
+
+    return renderedElement
+};
+
 const getApp = () => lodash.get(window, namespace);
 const getRouter = () => getApp().router;
 
@@ -828,16 +796,12 @@ class Router {
         this.routes = routes || {};
         this.className = `arsnl-router-${generateId()}`;
         this.route = State({
-            current: {
-                params: {},
-                component: this.get404(),
-            },
+            current: this.getRouteByLocation(),
         });
         this.onInit = options.onInit || lodash.noop;
         this.onBeforeRouteRender = options.onBeforeRouteRender || lodash.noop;
         this.onAfterRouteRender = options.onAfterRouteRender || lodash.noop;
         this.handleListeners();
-        this.setRoute();
         this.subscribeToStateChanges();
         this.onInit();
     }
@@ -879,30 +843,33 @@ class Router {
     get404 () {
         return lodash.get(this.routes, PAGE_NOT_FOUND, EmptyRoute)
     }
-    setRoute () {
+    getRouteByLocation () {
         const path = window.location.pathname;
         const { found, params } = this.findRoute(path);
+        if (found) {
+            return {
+                path,
+                parts: path.split('/'),
+                params,
+                component: this.routes[found],
+            }
+        } else {
+            return {
+                path,
+                parts: path.split('/'),
+                params,
+                component: this.get404(),
+            }
+        }
+    }
+    setRoute () {
         if (lodash.isFunction(this.onBeforeRouteRender)) {
             this.onBeforeRouteRender();
         }
         if (lodash.isFunction(this.onAfterRouteRender)) {
             waitForRender(() => this.onAfterRouteRender());
         }
-        if (found) {
-            this.route.current = {
-                path,
-                parts: path.split('/'),
-                params,
-                component: this.routes[found],
-            };
-        } else {
-            this.route.current = {
-                path,
-                parts: path.split('/'),
-                params,
-                component: this.get404(),
-            };
-        }
+        this.route.current = this.getRouteByLocation();
     }
     setTitle (str) {
         const title = lodash.reject([getApp().title, str], lodash.isEmpty).join(' | ');
@@ -913,45 +880,83 @@ class Router {
             if (!this.is.listening) {
                 this.is.listening = true;
             }
+            const props = {
+                setTitle: str => this.setTitle(str),
+                params: this.route.current.params,
+                search: qs.parse(window.location.search),
+                redirect: getRedirectHandler(routerEvents),
+            };
             return {
                 class: this.className,
-                render: this.route.current.component({
-                    setTitle: str => this.setTitle(str),
-                    params: this.route.current.params,
-                    search: qs.parse(window.location.search),
-                    redirect: getRedirectHandler(routerEvents),
-                }),
+                render: this.route.current.component(props),
             }
         }, [ this.route ])
     }
 }
 
+const App = class App {
+    constructor({
+        metadata,
+        title,
+        id,
+        component,
+        routes,
+        onInit,
+        onBeforeRouteRender,
+        onAfterRouteRender,
+    }) {
+        this.metadata = metadata || {};
+        this.title = title || '';
+        this.id = id;
+        this.component = component;
+        this.router = new Router(routes, {
+            onInit: onInit,
+            onBeforeRouteRender: onBeforeRouteRender,
+            onAfterRouteRender: onAfterRouteRender,
+        });
+        this.globalize();
+        this.injectApp();
+    }
+    globalize () {
+        window[namespace] = this;
+    }
+    getRootElement() {
+        return document.getElementById(this.id)
+    }
+    injectApp () {
+        this.getRootElement()
+            .append(this.component(this));
+    }
+    renderRoutes () {
+        return this.router.render()
+    }
+};
+
+const processProps = (tag, config, render) => {
+    const { disabled, checked, ...rest } = resolveConfig(config, render);
+    const props = { ...rest, tag };
+    if (render) {
+        props.render = render;
+    }
+    if (disabled === true) {
+        props.disabled = true;
+    }
+    if (checked === true) {
+        props.checked = true;
+    }
+    return props
+};
+
 const build = tag => (
-    (configOrRender, configOrTrackers) => {
+    (configOrRender, configOrTrackers, fields) => {
         if (isConfig(configOrRender)) {
             return DomNode(() => {
-                const {disabled, ...rest} = resolveConfig(configOrRender);
-                const props = {
-                    ...rest,
-                    tag
-                };
-                if (disabled === true) {
-                  props.disabled = true;
-                }
-                return props
-            }, configOrTrackers)
+                return processProps(tag, configOrRender)
+            }, configOrTrackers, fields)
         }
 
         if (isConfig(configOrTrackers)) {
-            const {disabled, ...rest} = resolveConfig(configOrTrackers);
-            const props = {
-                ...rest,
-                render: configOrRender,
-                tag
-            };
-            if (disabled === true) {
-              props.disabled = true;
-            }
+            const props = processProps(tag, configOrTrackers, configOrRender);
             return DomNode(props)
         }
 
@@ -961,6 +966,7 @@ const build = tag => (
         })
     }
 );
+
 const a =           build('a');
 const abbr =        build('abbr');
 const address =     build('address');
